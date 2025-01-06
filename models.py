@@ -11,6 +11,8 @@ class User(UserMixin, db.Model):
     is_online = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default="Available")
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    messages = db.relationship('Message', backref='user', lazy=True, foreign_keys='Message.user_id')
+    pinned_messages = db.relationship('Message', backref='pinned_by', lazy=True, foreign_keys='Message.pinned_by_id')
     bookmarks = db.relationship('UserBookmark', backref='user', lazy=True)
 
     def set_password(self, password):
@@ -32,8 +34,8 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('message.id'))
     file_url = db.Column(db.String(256))
     is_pinned = db.Column(db.Boolean, default=False)
@@ -55,6 +57,7 @@ class Reaction(db.Model):
     emoji = db.Column(db.String(32), nullable=False)
     message_id = db.Column(db.Integer, db.ForeignKey('message.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class UserBookmark(db.Model):
     id = db.Column(db.Integer, primary_key=True)

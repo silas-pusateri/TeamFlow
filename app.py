@@ -30,7 +30,11 @@ login_manager.init_app(app)
 login_manager.login_view = "auth.login"
 
 with app.app_context():
-    from models import User, Channel, Message, Thread, Reaction
+    # Import models before creating tables
+    from models import User, Channel, Message, Thread, Reaction, UserBookmark
+
+    # Drop all tables and recreate them with the new schema
+    db.drop_all()
     db.create_all()
 
     # Create default channel if it doesn't exist
