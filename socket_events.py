@@ -9,64 +9,91 @@ import logging
 @socketio.on('connect')
 def handle_connect():
     if current_user.is_authenticated:
-        current_user.is_online = True
-        db.session.commit()
-        emit('status_change', {
-            'user_id': current_user.id,
-            'status': 'online'
-        }, broadcast=True)
-        # Send current user information
-        emit('current_user', {
-            'user_id': current_user.id
-        })
+        try:
+            current_user.is_online = True
+            db.session.commit()
+            emit('status_change', {
+                'user_id': current_user.id,
+                'status': 'online'
+            }, broadcast=True)
+            # Send current user information
+            emit('current_user', {
+                'user_id': current_user.id
+            })
+        except Exception as e:
+            logging.error(f"Error in handle_connect: {str(e)}")
+            db.session.rollback()
 
 @socketio.on('join')
 def handle_join(data):
     try:
         room = data['channel']
         join_room(room)
-        # Send last 50 messages when joining a channel
-        messages = Message.query.filter_by(channel_id=room).order_by(Message.timestamp.desc()).limit(50).all()
 
-        for message in reversed(messages):
-            try:
-                # Include reactions with the message
-                reactions = [{
-                    'emoji': reaction.emoji,
-                    'user_id': reaction.user_id,
-                    'user': reaction.user.username if reaction.user else 'Unknown'
-                } for reaction in message.reactions]
+        # Load messages from database with proper error handling
+        try:
+            # Get last 50 messages for the channel
+            messages = Message.query.filter_by(channel_id=room)\
+                .order_by(Message.timestamp.desc())\
+                .limit(50)\
+                .all()
 
-                # Get thread messages for this message
-                thread_messages = Thread.query.filter_by(message_id=message.id).order_by(Thread.timestamp).all()
-                threads = [{
-                    'id': thread.id,
-                    'content': thread.content,
-                    'user': thread.user.username if thread.user else 'Unknown',
-                    'timestamp': thread.timestamp.isoformat()
-                } for thread in thread_messages]
+            for message in reversed(messages):
+                message_data = create_message_data(message)
+                if message_data:
+                    emit('message', message_data)
 
-                emit('message', {
-                    'id': message.id,
-                    'content': message.content,
-                    'user': message.user.username if message.user else 'Unknown',
-                    'timestamp': message.timestamp.isoformat(),
-                    'is_pinned': message.is_pinned,
-                    'pinned_by': message.pinned_by.username if message.pinned_by else None,
-                    'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
-                    'reactions': reactions,
-                    'threads': threads
-                })
-            except Exception as e:
-                logging.error(f"Error processing message {message.id}: {str(e)}")
-                continue
+        except Exception as e:
+            logging.error(f"Error loading messages for channel {room}: {str(e)}")
+
     except Exception as e:
         logging.error(f"Error in handle_join: {str(e)}")
+
+def create_message_data(message):
+    """Helper function to create message data dictionary with proper error handling"""
+    try:
+        # Get reactions for the message
+        reactions = [{
+            'emoji': reaction.emoji,
+            'user_id': reaction.user_id,
+            'user': reaction.user.username if reaction.user else 'Unknown'
+        } for reaction in message.reactions]
+
+        # Get thread messages
+        threads = []
+        thread_messages = Thread.query.filter_by(message_id=message.id)\
+            .order_by(Thread.timestamp)\
+            .all()
+
+        for thread in thread_messages:
+            thread_data = {
+                'id': thread.id,
+                'content': thread.content,
+                'user': thread.user.username if thread.user else 'Unknown',
+                'timestamp': thread.timestamp.isoformat()
+            }
+            threads.append(thread_data)
+
+        return {
+            'id': message.id,
+            'content': message.content,
+            'user': message.user.username if message.user else 'Unknown',
+            'timestamp': message.timestamp.isoformat(),
+            'is_pinned': message.is_pinned,
+            'pinned_by': message.pinned_by.username if message.pinned_by else None,
+            'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
+            'reactions': reactions,
+            'threads': threads
+        }
+    except Exception as e:
+        logging.error(f"Error creating message data for message {message.id}: {str(e)}")
+        return None
 
 @socketio.on('message')
 def handle_message(data):
     if current_user.is_authenticated:
         try:
+            # Create and save new message to database
             message = Message(
                 content=data['content'],
                 user_id=current_user.id,
@@ -75,18 +102,40 @@ def handle_message(data):
             db.session.add(message)
             db.session.commit()
 
-            emit('message', {
-                'id': message.id,
-                'content': message.content,
-                'user': current_user.username,
-                'timestamp': message.timestamp.isoformat(),
-                'is_pinned': False,
-                'pinned_by': None,
-                'pinned_at': None,
-                'reactions': []
-            }, room=data['channel_id'])
+            # Create message data for broadcast
+            message_data = create_message_data(message)
+            if message_data:
+                emit('message', message_data, room=data['channel_id'])
+
         except Exception as e:
             logging.error(f"Error in handle_message: {str(e)}")
+            db.session.rollback()
+
+@socketio.on('thread_reply')
+def handle_thread_reply(data):
+    if current_user.is_authenticated:
+        try:
+            # Create and save thread message
+            thread = Thread(
+                message_id=data['parent_id'],
+                content=data['content'],
+                user_id=current_user.id
+            )
+            db.session.add(thread)
+            db.session.commit()
+
+            # Broadcast thread message
+            thread_data = {
+                'id': thread.id,
+                'content': thread.content,
+                'user': current_user.username,
+                'parent_id': data['parent_id'],
+                'timestamp': thread.timestamp.isoformat()
+            }
+            emit('thread_message', thread_data, room=data['channel_id'])
+
+        except Exception as e:
+            logging.error(f"Error in handle_thread_reply: {str(e)}")
             db.session.rollback()
 
 @socketio.on('pin_message')
@@ -144,29 +193,6 @@ def handle_bookmark_message(data):
             }, room=current_user.id)
         except Exception as e:
             logging.error(f"Error in handle_bookmark_message: {str(e)}")
-            db.session.rollback()
-
-@socketio.on('thread_reply')
-def handle_thread_reply(data):
-    if current_user.is_authenticated:
-        try:
-            thread = Thread(
-                message_id=data['parent_id'],
-                content=data['content'],
-                user_id=current_user.id
-            )
-            db.session.add(thread)
-            db.session.commit()
-
-            emit('thread_message', {
-                'id': thread.id,
-                'content': thread.content,
-                'user': current_user.username,
-                'parent_id': data['parent_id'],
-                'timestamp': thread.timestamp.isoformat()
-            }, room=data['channel_id'])
-        except Exception as e:
-            logging.error(f"Error in handle_thread_reply: {str(e)}")
             db.session.rollback()
 
 @socketio.on('reaction')
