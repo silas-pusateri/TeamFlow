@@ -95,18 +95,40 @@ body {
 .message-actions {
     display: flex;
     gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.pin-btn,
+.bookmark-btn,
 .reaction-btn {
     border: none;
     background: none;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+    opacity: 0.6;
+    transition: opacity 0.2s, background-color 0.2s;
 }
 
+.pin-btn:hover,
+.bookmark-btn:hover,
 .reaction-btn:hover {
     background-color: rgba(0, 0, 0, 0.1);
+    opacity: 1;
+}
+
+.pin-btn.active,
+.bookmark-btn.active {
+    color: var(--primary-color);
+    opacity: 1;
 }
 
 .reactions {
@@ -179,4 +201,22 @@ body {
 
 .emoji-option:hover {
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+.pinned-messages {
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.pinned-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.pinned-message i {
+    color: var(--primary-color);
 }

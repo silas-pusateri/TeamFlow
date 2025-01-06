@@ -32,11 +32,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Reaction handling
+    // Pin and Bookmark handling
     messageContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('reaction-btn')) {
-            const messageElement = e.target.closest('.message');
-            const messageId = messageElement.dataset.messageId;
+        const messageElement = e.target.closest('.message');
+        if (!messageElement) return;
+
+        const messageId = messageElement.dataset.messageId;
+
+        if (e.target.classList.contains('pin-btn')) {
+            socket.emit('pin_message', {
+                message_id: messageId
+            });
+        } else if (e.target.classList.contains('bookmark-btn')) {
+            socket.emit('bookmark_message', {
+                message_id: messageId,
+                note: '' // Optional note feature can be added later
+            });
+        } else if (e.target.classList.contains('reaction-btn')) {
             showEmojiPicker(messageId, e.target.getBoundingClientRect());
         }
     });
@@ -95,14 +107,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.removeEventListener('click', handleClickOutside);
     }
 
-    // Thread view toggle
-    messageContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('thread-toggle')) {
-            const messageId = e.target.closest('.message').dataset.messageId;
-            toggleThread(messageId);
-        }
-    });
-
     function sendMessage() {
         const content = messageInput.value.trim();
         if (content && currentChannel) {
@@ -143,15 +147,29 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="message-content">${message.content}</div>
             <div class="message-actions">
-                <button class="reaction-btn" data-emoji="👍">👍</button>
-                <button class="reaction-btn" data-emoji="❤️">❤️</button>
-                <button class="thread-toggle">Thread</button>
+                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" title="${message.is_pinned ? `Pinned by ${message.pinned_by}` : 'Pin message'}">
+                    <i class="feather-pin"></i>
+                </button>
+                <button class="bookmark-btn ${message.is_bookmarked ? 'active' : ''}" title="Bookmark message">
+                    <i class="feather-bookmark"></i>
+                </button>
+                <button class="reaction-btn" title="Add reaction">
+                    <i class="feather-smile"></i>
+                </button>
             </div>
             <div class="reactions"></div>
             <div class="thread-container" style="display: none;"></div>
         `;
         messageContainer.appendChild(messageElement);
     }
+
+    // Thread view toggle
+    messageContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('thread-toggle')) {
+            const messageId = e.target.closest('.message').dataset.messageId;
+            toggleThread(messageId);
+        }
+    });
 
     function toggleThread(messageId) {
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);

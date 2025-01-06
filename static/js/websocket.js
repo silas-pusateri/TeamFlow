@@ -27,6 +27,25 @@ socket.on('thread_message', (data) => {
     }
 });
 
+socket.on('message_pinned', (data) => {
+    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (message) {
+        const pinButton = message.querySelector('.pin-btn');
+        pinButton.classList.toggle('active', data.is_pinned);
+        pinButton.title = data.is_pinned ? 
+            `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` :
+            'Pin message';
+    }
+});
+
+socket.on('message_bookmarked', (data) => {
+    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (message) {
+        const bookmarkButton = message.querySelector('.bookmark-btn');
+        bookmarkButton.classList.toggle('active', data.is_bookmarked);
+    }
+});
+
 socket.on('reaction_added', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
     if (message) {

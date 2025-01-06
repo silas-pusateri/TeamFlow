@@ -11,10 +11,11 @@ class User(UserMixin, db.Model):
     is_online = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default="Available")
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    bookmarks = db.relationship('UserBookmark', backref='user', lazy=True)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-    
+
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
@@ -35,8 +36,12 @@ class Message(db.Model):
     channel_id = db.Column(db.Integer, db.ForeignKey('channel.id'))
     parent_id = db.Column(db.Integer, db.ForeignKey('message.id'))
     file_url = db.Column(db.String(256))
+    is_pinned = db.Column(db.Boolean, default=False)
+    pinned_at = db.Column(db.DateTime)
+    pinned_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     reactions = db.relationship('Reaction', backref='message', lazy=True)
     threads = db.relationship('Thread', backref='parent_message', lazy=True)
+    bookmarks = db.relationship('UserBookmark', backref='message', lazy=True)
 
 class Thread(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,3 +55,10 @@ class Reaction(db.Model):
     emoji = db.Column(db.String(32), nullable=False)
     message_id = db.Column(db.Integer, db.ForeignKey('message.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+class UserBookmark(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    note = db.Column(db.String(256))
