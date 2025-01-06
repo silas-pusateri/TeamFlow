@@ -24,11 +24,13 @@ socket.on('message', (data) => {
             if (!reactionGroups[reaction.emoji]) {
                 reactionGroups[reaction.emoji] = {
                     count: 0,
-                    users: new Set()
+                    users: new Set(),
+                    usernames: []
                 };
             }
             reactionGroups[reaction.emoji].count++;
             reactionGroups[reaction.emoji].users.add(reaction.user_id);
+            reactionGroups[reaction.emoji].usernames.push(reaction.user);
         });
     }
 
@@ -49,10 +51,10 @@ socket.on('message', (data) => {
             </button>
         </div>
         <div class="reactions">
-            ${Object.entries(reactionGroups).map(([emoji, {count, users}]) => `
+            ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
                 <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
                       data-emoji="${emoji}" 
-                      title="${count} ${count === 1 ? 'reaction' : 'reactions'}">
+                      title="${usernames.join(', ')}">
                     ${emoji}
                     <span class="reaction-count">${count}</span>
                 </span>
@@ -120,6 +122,20 @@ socket.on('reaction_added', (data) => {
                 // Another user's reaction
                 countElement.textContent = currentCount + 1;
             }
+
+            // Update title with usernames
+            const currentTitle = existingReaction.title.split(', ');
+            if (existingReaction.classList.contains('active')) {
+                if (!currentTitle.includes(data.user)) {
+                    currentTitle.push(data.user);
+                }
+            } else {
+                const index = currentTitle.indexOf(data.user);
+                if (index > -1) {
+                    currentTitle.splice(index, 1);
+                }
+            }
+            existingReaction.title = currentTitle.join(', ');
         } else {
             // Create new reaction
             const reaction = document.createElement('span');
@@ -128,6 +144,7 @@ socket.on('reaction_added', (data) => {
                 reaction.classList.add('active');
             }
             reaction.dataset.emoji = data.emoji;
+            reaction.title = data.user;
             reaction.innerHTML = `
                 ${data.emoji}
                 <span class="reaction-count">1</span>
@@ -153,7 +170,6 @@ document.addEventListener('click', (e) => {
 socket.on('status_change', (data) => {
     updateUserStatus(data);
 });
-
 
 socket.on('message_pinned', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
