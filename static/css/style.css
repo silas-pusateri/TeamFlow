@@ -155,3 +155,28 @@ body {
 .status-dot.offline {
     background-color: #95a5a6;
 }
+
+.emoji-picker {
+    position: fixed;
+    display: none;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 200px;
+}
+
+.emoji-option {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.emoji-option:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}

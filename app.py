@@ -1,9 +1,9 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
-from flask_login import LoginManager
+from flask_login import LoginManager, login_required, current_user
 from sqlalchemy.orm import DeclarativeBase
 
 logging.basicConfig(level=logging.DEBUG)
@@ -41,3 +41,17 @@ with app.app_context():
 def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
+
+# Add root route
+@app.route('/')
+def index():
+    if current_user.is_authenticated:
+        return redirect(url_for('chat'))
+    return redirect(url_for('auth.login'))
+
+# Add chat route
+@app.route('/chat')
+@login_required
+def chat():
+    channels = Channel.query.all()
+    return render_template('chat.html', channels=channels)

@@ -35,14 +35,65 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reaction handling
     messageContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('reaction-btn')) {
-            const messageId = e.target.closest('.message').dataset.messageId;
-            const emoji = e.target.dataset.emoji;
-            socket.emit('reaction', {
-                message_id: messageId,
-                emoji: emoji
-            });
+            const messageElement = e.target.closest('.message');
+            const messageId = messageElement.dataset.messageId;
+            showEmojiPicker(messageId, e.target.getBoundingClientRect());
         }
     });
+
+    // Create emoji picker element
+    const emojiPicker = document.createElement('div');
+    emojiPicker.className = 'emoji-picker';
+    emojiPicker.style.display = 'none';
+    document.body.appendChild(emojiPicker);
+
+    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀'];
+
+    function showEmojiPicker(messageId, buttonRect) {
+        emojiPicker.innerHTML = commonEmojis.map(emoji => 
+            `<span class="emoji-option" data-emoji="${emoji}">${emoji}</span>`
+        ).join('');
+
+        emojiPicker.style.display = 'flex';
+        const pickerRect = emojiPicker.getBoundingClientRect();
+
+        // Position the picker near the reaction button
+        emojiPicker.style.top = `${buttonRect.top - pickerRect.height}px`;
+        emojiPicker.style.left = `${buttonRect.left}px`;
+
+        // Store the message ID for the reaction handler
+        emojiPicker.dataset.messageId = messageId;
+
+        // Add click handlers for emoji selection
+        const emojiOptions = emojiPicker.querySelectorAll('.emoji-option');
+        emojiOptions.forEach(option => {
+            option.addEventListener('click', handleEmojiSelect);
+        });
+
+        // Close picker when clicking outside
+        document.addEventListener('click', handleClickOutside);
+    }
+
+    function handleEmojiSelect(e) {
+        const emoji = e.target.dataset.emoji;
+        const messageId = emojiPicker.dataset.messageId;
+        socket.emit('reaction', {
+            message_id: messageId,
+            emoji: emoji
+        });
+        hideEmojiPicker();
+    }
+
+    function handleClickOutside(e) {
+        if (!emojiPicker.contains(e.target) && !e.target.classList.contains('reaction-btn')) {
+            hideEmojiPicker();
+        }
+    }
+
+    function hideEmojiPicker() {
+        emojiPicker.style.display = 'none';
+        document.removeEventListener('click', handleClickOutside);
+    }
 
     // Thread view toggle
     messageContainer.addEventListener('click', (e) => {
