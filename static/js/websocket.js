@@ -1,8 +1,8 @@
 let socket = io();
+let currentUserId = null;
 
 socket.on('connect', () => {
     console.log('Connected to WebSocket');
-    // Request current user ID from server
     socket.emit('get_current_user');
 });
 
@@ -34,7 +34,13 @@ socket.on('message', (data) => {
         });
     }
 
-    messageElement.innerHTML = `
+    messageElement.innerHTML = createMessageHTML(data, reactionGroups);
+    messageContainer.appendChild(messageElement);
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+});
+
+function createMessageHTML(data, reactionGroups) {
+    return `
         <div class="message-header">
             <span class="username">${data.user}</span>
             <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
@@ -61,19 +67,33 @@ socket.on('message', (data) => {
             `).join('')}
         </div>
         <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}">
-            ${(data.threads || []).map(thread => `
-                <div class="thread-message">
-                    <span class="username">${thread.user}</span>
-                    <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
-                    <div class="content">${thread.content}</div>
-                </div>
-            `).join('')}
+            ${(data.threads || []).map(thread => createThreadMessageHTML(thread)).join('')}
         </div>
     `;
+}
 
-    messageContainer.appendChild(messageElement);
-    messageContainer.scrollTop = messageContainer.scrollHeight;
-});
+function createThreadMessageHTML(thread) {
+    return `
+        <div class="thread-message" data-message-id="${thread.id}">
+            <div class="message-header">
+                <span class="username">${thread.user}</span>
+                <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="content">${thread.content}</div>
+            <div class="message-hover-actions">
+                <button class="hover-action-btn reaction-btn" title="Add reaction">
+                    <i class="feather-smile"></i>
+                    React
+                </button>
+                <button class="hover-action-btn reply-btn" title="Reply in thread">
+                    <i class="feather-message-square"></i>
+                    Reply
+                </button>
+            </div>
+            <div class="reactions"></div>
+        </div>
+    `;
+}
 
 socket.on('thread_message', (data) => {
     const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
@@ -83,11 +103,9 @@ socket.on('thread_message', (data) => {
 
         const threadMessage = document.createElement('div');
         threadMessage.classList.add('thread-message');
-        threadMessage.innerHTML = `
-            <span class="username">${data.user}</span>
-            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
-            <div class="content">${data.content}</div>
-        `;
+        threadMessage.dataset.messageId = data.id;
+        threadMessage.innerHTML = createThreadMessageHTML(data);
+
         threadContainer.appendChild(threadMessage);
         threadContainer.scrollTop = threadContainer.scrollHeight;
     }

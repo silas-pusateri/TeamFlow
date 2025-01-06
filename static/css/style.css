@@ -277,7 +277,6 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-
 .message:hover .message-hover-actions {
     display: flex;
 }
@@ -417,17 +416,41 @@ body {
 }
 
 .thread-message {
-    padding: 4px 8px;
+    position: relative;
+    padding: 8px;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
+    border-radius: 4px;
 }
 
-.thread-message .username {
-    font-weight: bold;
-    margin-right: 8px;
+.thread-message:hover {
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
-.thread-message .timestamp {
-    color: #666;
-    font-size: 0.8rem;
+.thread-message .message-hover-actions {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    gap: 8px;
+    background-color: var(--bg-color);
+    padding: 4px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thread-message:hover .message-hover-actions {
+    display: flex;
+}
+
+.thread-message .reactions {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.dark-theme .thread-message:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
