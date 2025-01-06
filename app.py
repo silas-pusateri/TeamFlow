@@ -33,6 +33,16 @@ with app.app_context():
     from models import User, Channel, Message, Thread, Reaction
     db.create_all()
 
+    # Create default channel if it doesn't exist
+    default_channel = Channel.query.filter_by(name="General").first()
+    if not default_channel:
+        default_channel = Channel(
+            name="General",
+            description="Default channel for general discussions"
+        )
+        db.session.add(default_channel)
+        db.session.commit()
+
     # Register blueprints
     from auth import auth_bp
     app.register_blueprint(auth_bp)

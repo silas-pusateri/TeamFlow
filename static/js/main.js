@@ -32,6 +32,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Create send button
+    const sendButton = document.createElement('button');
+    sendButton.className = 'send-button';
+    sendButton.innerHTML = '<i class="feather-send"></i>';
+    sendButton.addEventListener('click', sendMessage);
+    messageInput.parentElement.appendChild(sendButton);
+
+    // Select first channel by default
+    const firstChannel = channelList.querySelector('.channel-item');
+    if (firstChannel) {
+        const channelId = firstChannel.dataset.channelId;
+        switchChannel(channelId);
+    }
+
     // Pin and Bookmark handling
     messageContainer.addEventListener('click', (e) => {
         const messageElement = e.target.closest('.message');
@@ -53,6 +67,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function sendMessage() {
+        const content = messageInput.value.trim();
+        if (content && currentChannel) {
+            socket.emit('message', {
+                content: content,
+                channel_id: currentChannel
+            });
+            messageInput.value = '';
+        }
+    }
+
+    function switchChannel(channelId) {
+        if (currentChannel) {
+            socket.emit('leave', { channel: currentChannel });
+        }
+        currentChannel = channelId;
+        socket.emit('join', { channel: channelId });
+
+        // Highlight selected channel
+        document.querySelectorAll('.channel-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.channelId === channelId) {
+                item.classList.add('active');
+            }
+        });
+
+        // Clear messages and load channel messages
+        messageContainer.innerHTML = '';
+        loadChannelMessages(channelId);
+    }
+
+    function loadChannelMessages(channelId) {
+        // For now, we'll just clear the container as we don't have an API endpoint yet
+        messageContainer.innerHTML = '';
+    }
+
+    function renderMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.dataset.messageId = message.id;
+        messageElement.innerHTML = `
+            <div class="message-header">
+                <span class="username">${message.user}</span>
+                <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="message-content">${message.content}</div>
+            <div class="message-actions">
+                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" title="${message.is_pinned ? `Pinned by ${message.pinned_by}` : 'Pin message'}">
+                    <i class="feather-pin"></i>
+                </button>
+                <button class="bookmark-btn ${message.is_bookmarked ? 'active' : ''}" title="Bookmark message">
+                    <i class="feather-bookmark"></i>
+                </button>
+                <button class="reaction-btn" title="Add reaction">
+                    <i class="feather-smile"></i>
+                </button>
+            </div>
+            <div class="reactions"></div>
+            <div class="thread-container" style="display: none;"></div>
+        `;
+        messageContainer.appendChild(messageElement);
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
     // Create emoji picker element
     const emojiPicker = document.createElement('div');
     emojiPicker.className = 'emoji-picker';
@@ -62,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀'];
 
     function showEmojiPicker(messageId, buttonRect) {
-        emojiPicker.innerHTML = commonEmojis.map(emoji => 
+        emojiPicker.innerHTML = commonEmojis.map(emoji =>
             `<span class="emoji-option" data-emoji="${emoji}">${emoji}</span>`
         ).join('');
 
@@ -107,61 +185,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.removeEventListener('click', handleClickOutside);
     }
 
-    function sendMessage() {
-        const content = messageInput.value.trim();
-        if (content && currentChannel) {
-            socket.emit('message', {
-                content: content,
-                channel_id: currentChannel
-            });
-            messageInput.value = '';
+    // Pin and Bookmark handling (moved from above for better organization)
+    messageContainer.addEventListener('click', (e) => {
+        const messageElement = e.target.closest('.message');
+        if (!messageElement) return;
+
+        const messageId = messageElement.dataset.messageId;
+
+        if (e.target.classList.contains('pin-btn')) {
+            socket.emit('pin_message', { message_id: messageId });
+        } else if (e.target.classList.contains('bookmark-btn')) {
+            socket.emit('bookmark_message', { message_id: messageId, note: '' });
+        } else if (e.target.classList.contains('reaction-btn')) {
+            showEmojiPicker(messageId, e.target.getBoundingClientRect());
         }
-    }
+    });
 
-    function switchChannel(channelId) {
-        if (currentChannel) {
-            socket.emit('leave', { channel: currentChannel });
-        }
-        currentChannel = channelId;
-        socket.emit('join', { channel: channelId });
-        loadChannelMessages(channelId);
-    }
-
-    function loadChannelMessages(channelId) {
-        fetch(`/api/channels/${channelId}/messages`)
-            .then(response => response.json())
-            .then(messages => {
-                messageContainer.innerHTML = '';
-                messages.forEach(message => renderMessage(message));
-            });
-    }
-
-    function renderMessage(message) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-        messageElement.dataset.messageId = message.id;
-        messageElement.innerHTML = `
-            <div class="message-header">
-                <span class="username">${message.user}</span>
-                <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span>
-            </div>
-            <div class="message-content">${message.content}</div>
-            <div class="message-actions">
-                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" title="${message.is_pinned ? `Pinned by ${message.pinned_by}` : 'Pin message'}">
-                    <i class="feather-pin"></i>
-                </button>
-                <button class="bookmark-btn ${message.is_bookmarked ? 'active' : ''}" title="Bookmark message">
-                    <i class="feather-bookmark"></i>
-                </button>
-                <button class="reaction-btn" title="Add reaction">
-                    <i class="feather-smile"></i>
-                </button>
-            </div>
-            <div class="reactions"></div>
-            <div class="thread-container" style="display: none;"></div>
-        `;
-        messageContainer.appendChild(messageElement);
-    }
 
     // Thread view toggle
     messageContainer.addEventListener('click', (e) => {

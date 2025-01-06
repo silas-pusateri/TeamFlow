@@ -46,10 +46,17 @@ body {
     padding: 0.5rem 1rem;
     cursor: pointer;
     border-radius: 4px;
+    transition: background-color 0.2s;
 }
 
-.channel-item:hover {
+.channel-item:hover,
+.channel-item.active {
     background-color: rgba(0, 0, 0, 0.1);
+}
+
+.channel-item.active {
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
 .main-content {
@@ -146,14 +153,36 @@ body {
 .input-container {
     padding: 1rem;
     border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
 }
 
 #message-input {
-    width: 100%;
-    padding: 0.5rem;
+    flex: 1;
+    padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     resize: none;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.send-button {
+    padding: 0.75rem;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background-color: var(--secondary-color);
 }
 
 .thread-container {
