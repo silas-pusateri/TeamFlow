@@ -33,6 +33,15 @@ def handle_join(data):
             'user': reaction.user.username
         } for reaction in message.reactions]
 
+        # Get thread messages for this message
+        thread_messages = Thread.query.filter_by(message_id=message.id).order_by(Thread.timestamp).all()
+        threads = [{
+            'id': thread.id,
+            'content': thread.content,
+            'user': thread.user.username,
+            'timestamp': thread.timestamp.isoformat()
+        } for thread in thread_messages]
+
         emit('message', {
             'id': message.id,
             'content': message.content,
@@ -41,7 +50,8 @@ def handle_join(data):
             'is_pinned': message.is_pinned,
             'pinned_by': message.pinned_by.username if message.pinned_by else None,
             'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
-            'reactions': reactions
+            'reactions': reactions,
+            'threads': threads
         })
 
 @socketio.on('message')

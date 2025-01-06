@@ -58,11 +58,37 @@ socket.on('message', (data) => {
                 </span>
             `).join('')}
         </div>
-        <div class="thread-container"></div>
+        <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}">
+            ${(data.threads || []).map(thread => `
+                <div class="thread-message">
+                    <span class="username">${thread.user}</span>
+                    <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
+                    <div class="content">${thread.content}</div>
+                </div>
+            `).join('')}
+        </div>
     `;
 
     messageContainer.appendChild(messageElement);
     messageContainer.scrollTop = messageContainer.scrollHeight;
+});
+
+socket.on('thread_message', (data) => {
+    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
+    if (parentMessage) {
+        const threadContainer = parentMessage.querySelector('.thread-container');
+        threadContainer.classList.add('active');
+
+        const threadMessage = document.createElement('div');
+        threadMessage.classList.add('thread-message');
+        threadMessage.innerHTML = `
+            <span class="username">${data.user}</span>
+            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+            <div class="content">${data.content}</div>
+        `;
+        threadContainer.appendChild(threadMessage);
+        threadContainer.scrollTop = threadContainer.scrollHeight;
+    }
 });
 
 socket.on('reaction_added', (data) => {
@@ -128,20 +154,6 @@ socket.on('status_change', (data) => {
     updateUserStatus(data);
 });
 
-socket.on('thread_message', (data) => {
-    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
-    if (parentMessage) {
-        const threadContainer = parentMessage.querySelector('.thread-container');
-        const threadMessage = document.createElement('div');
-        threadMessage.classList.add('thread-message');
-        threadMessage.innerHTML = `
-            <span class="username">${data.user}</span>
-            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
-            <div class="content">${data.content}</div>
-        `;
-        threadContainer.appendChild(threadMessage);
-    }
-});
 
 socket.on('message_pinned', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
