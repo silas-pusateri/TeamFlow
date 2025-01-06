@@ -66,7 +66,7 @@ function createMessageHTML(data, reactionGroups) {
                 </span>
             `).join('')}
         </div>
-        <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}">
+        <div class="thread-container" data-message-id="${data.id}">
             ${(data.threads || []).map(thread => createThreadMessageHTML(thread)).join('')}
         </div>
     `;
@@ -74,7 +74,7 @@ function createMessageHTML(data, reactionGroups) {
 
 function createThreadMessageHTML(thread) {
     return `
-        <div class="thread-message" data-message-id="${thread.id}">
+        <div class="thread-message" data-thread-id="${thread.id}">
             <div class="message-header">
                 <span class="username">${thread.user}</span>
                 <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
@@ -85,10 +85,6 @@ function createThreadMessageHTML(thread) {
                     <i class="feather-smile"></i>
                     React
                 </button>
-                <button class="hover-action-btn reply-btn" title="Reply in thread">
-                    <i class="feather-message-square"></i>
-                    Reply
-                </button>
             </div>
             <div class="reactions"></div>
         </div>
@@ -96,18 +92,18 @@ function createThreadMessageHTML(thread) {
 }
 
 socket.on('thread_message', (data) => {
-    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
-    if (parentMessage) {
-        const threadContainer = parentMessage.querySelector('.thread-container');
-        threadContainer.classList.add('active');
-
+    console.log('Received thread message:', data);
+    const threadContainer = document.querySelector(`.thread-container[data-message-id="${data.parent_id}"]`);
+    if (threadContainer) {
+        threadContainer.style.display = 'block';
         const threadMessage = document.createElement('div');
         threadMessage.classList.add('thread-message');
-        threadMessage.dataset.messageId = data.id;
+        threadMessage.dataset.threadId = data.id;
         threadMessage.innerHTML = createThreadMessageHTML(data);
-
         threadContainer.appendChild(threadMessage);
         threadContainer.scrollTop = threadContainer.scrollHeight;
+    } else {
+        console.error('Thread container not found for parent message:', data.parent_id);
     }
 });
 
@@ -172,9 +168,11 @@ socket.on('reaction_added', (data) => {
     }
 });
 
-// Add event handler for clicking on reactions
+// Add event handler for clicking on reactions and replies
 document.addEventListener('click', (e) => {
     const reaction = e.target.closest('.reaction');
+    const replyBtn = e.target.closest('.reply-btn');
+
     if (reaction) {
         const messageId = reaction.closest('.message').dataset.messageId;
         const emoji = reaction.dataset.emoji;
@@ -182,30 +180,47 @@ document.addEventListener('click', (e) => {
             message_id: messageId,
             emoji: emoji
         });
+    } else if (replyBtn) {
+        const messageElement = replyBtn.closest('.message');
+        const threadContainer = messageElement.querySelector('.thread-container');
+        const messageId = messageElement.dataset.messageId;
+
+        // Show reply input
+        const replyInput = document.createElement('div');
+        replyInput.className = 'reply-input';
+        replyInput.innerHTML = `
+            <textarea class="form-control" placeholder="Type your reply..."></textarea>
+            <button class="btn btn-primary mt-2">Send Reply</button>
+        `;
+
+        // Add the reply input if it doesn't exist
+        if (!threadContainer.querySelector('.reply-input')) {
+            threadContainer.appendChild(replyInput);
+        }
+
+        // Show the thread container
+        threadContainer.style.display = 'block';
+
+        // Handle reply submission
+        const sendButton = replyInput.querySelector('button');
+        const textarea = replyInput.querySelector('textarea');
+
+        sendButton.onclick = () => {
+            const content = textarea.value.trim();
+            if (content) {
+                socket.emit('thread_reply', {
+                    content: content,
+                    parent_id: messageId,
+                    channel_id: currentChannel // This is defined in main.js
+                });
+                textarea.value = '';
+            }
+        };
     }
 });
 
 socket.on('status_change', (data) => {
     updateUserStatus(data);
-});
-
-socket.on('message_pinned', (data) => {
-    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
-    if (message) {
-        const pinButton = message.querySelector('.pin-btn');
-        pinButton.classList.toggle('active', data.is_pinned);
-        pinButton.title = data.is_pinned ? 
-            `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` :
-            'Pin message';
-    }
-});
-
-socket.on('message_bookmarked', (data) => {
-    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
-    if (message) {
-        const bookmarkButton = message.querySelector('.bookmark-btn');
-        bookmarkButton.classList.toggle('active', data.is_bookmarked);
-    }
 });
 
 function updateUserStatus(data) {
@@ -221,4 +236,5 @@ function updateUserStatus(data) {
 window.currentUserId = null;
 socket.on('current_user', (data) => {
     window.currentUserId = data.user_id;
+    currentUserId = data.user_id;
 });
