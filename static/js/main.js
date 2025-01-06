@@ -81,7 +81,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Pin and Bookmark handling
+    // Create emoji picker element
+    const emojiPicker = document.createElement('div');
+    emojiPicker.className = 'emoji-picker';
+    emojiPicker.style.display = 'none';
+    document.body.appendChild(emojiPicker);
+
+    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀', 
+                         '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
+
+    // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {
         const messageElement = e.target.closest('.message');
         if (!messageElement) return;
@@ -97,25 +106,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Create emoji picker element
-    const emojiPicker = document.createElement('div');
-    emojiPicker.className = 'emoji-picker';
-    emojiPicker.style.display = 'none';
-    document.body.appendChild(emojiPicker);
-
-    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀'];
-
     function showEmojiPicker(messageId, buttonRect) {
         emojiPicker.innerHTML = commonEmojis.map(emoji =>
             `<span class="emoji-option" data-emoji="${emoji}">${emoji}</span>`
         ).join('');
 
         emojiPicker.style.display = 'flex';
-        const pickerRect = emojiPicker.getBoundingClientRect();
 
         // Position the picker near the reaction button
-        emojiPicker.style.top = `${buttonRect.top - pickerRect.height}px`;
-        emojiPicker.style.left = `${buttonRect.left}px`;
+        const pickerRect = emojiPicker.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+
+        // Calculate position to ensure the picker stays within viewport
+        let top = buttonRect.top - pickerRect.height;
+        let left = buttonRect.left;
+
+        // Adjust if too close to top
+        if (top < 10) {
+            top = buttonRect.bottom + 5;
+        }
+
+        // Adjust if too close to right edge
+        if (left + pickerRect.width > windowWidth - 10) {
+            left = windowWidth - pickerRect.width - 10;
+        }
+
+        emojiPicker.style.top = `${top}px`;
+        emojiPicker.style.left = `${left}px`;
 
         // Store the message ID for the reaction handler
         emojiPicker.dataset.messageId = messageId;
