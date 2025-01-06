@@ -30,6 +30,35 @@ document.addEventListener('DOMContentLoaded', function() {
     cancelReplyButton.addEventListener('click', cancelReply);
     replyContext.appendChild(cancelReplyButton);
 
+    // Channel creation
+    const createChannelBtn = document.getElementById('createChannelBtn');
+    const channelNameInput = document.getElementById('channelName');
+    const channelDescriptionInput = document.getElementById('channelDescription');
+    const newChannelModal = document.getElementById('newChannelModal');
+    const modal = new bootstrap.Modal(newChannelModal);
+
+    createChannelBtn.addEventListener('click', () => {
+        const name = channelNameInput.value.trim();
+        const description = channelDescriptionInput.value.trim();
+
+        if (name && description) {
+            socket.emit('create_channel', { name, description });
+            channelNameInput.value = '';
+            channelDescriptionInput.value = '';
+            modal.hide();
+        }
+    });
+
+    socket.on('channel_created', (data) => {
+        const channelList = document.getElementById('channel-list');
+        const channelItem = document.createElement('li');
+        channelItem.className = 'channel-item';
+        channelItem.dataset.channelId = data.id;
+        channelItem.textContent = `# ${data.name}`;
+        channelList.appendChild(channelItem);
+    });
+
+
     // Channel selection
     channelList.addEventListener('click', (e) => {
         if (e.target.classList.contains('channel-item')) {
@@ -147,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     emojiPicker.style.display = 'none';
     document.body.appendChild(emojiPicker);
 
-    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀', 
+    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀',
                          '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
 
     function showEmojiPicker(messageId, buttonRect) {

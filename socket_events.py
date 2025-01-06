@@ -190,3 +190,22 @@ def handle_disconnect():
             'user_id': current_user.id,
             'status': 'offline'
         }, broadcast=True)
+
+@socketio.on('create_channel')
+def handle_create_channel(data):
+    if current_user.is_authenticated:
+        channel = Channel(
+            name=data['name'],
+            description=data['description'],
+            created_by_id=current_user.id
+        )
+        db.session.add(channel)
+        db.session.commit()
+
+        # Broadcast new channel to all users
+        emit('channel_created', {
+            'id': channel.id,
+            'name': channel.name,
+            'description': channel.description,
+            'created_by': current_user.username
+        }, broadcast=True)
