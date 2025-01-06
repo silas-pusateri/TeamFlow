@@ -71,8 +71,9 @@ body {
 }
 
 .message {
+    position: relative;
     margin-bottom: 1rem;
-    padding: 0.5rem;
+    padding: 8px;
     border-radius: 4px;
 }
 
@@ -266,6 +267,71 @@ body {
     margin-left: 2rem;
     padding-left: 1rem;
     border-left: 2px solid var(--border-color);
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.thread-container.active {
+    display: block;
+}
+
+.thread-message {
+    padding: 4px 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.thread-message .username {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.thread-message .timestamp {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+/* Hover actions for messages */
+.message-hover-actions {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    gap: 8px;
+    background-color: var(--bg-color);
+    padding: 4px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+
+.message:hover .message-hover-actions {
+    display: flex;
+}
+
+.hover-action-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.hover-action-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .hover-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .status-dot {

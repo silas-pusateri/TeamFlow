@@ -38,16 +38,14 @@ socket.on('message', (data) => {
             <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
         </div>
         <div class="message-content">${data.content}</div>
-        <div class="message-actions">
-            <button class="pin-btn ${data.is_pinned ? 'active' : ''}" 
-                title="${data.is_pinned ? `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` : 'Pin message'}">
-                <i class="feather-pin"></i>
-            </button>
-            <button class="bookmark-btn" title="Bookmark message">
-                <i class="feather-bookmark"></i>
-            </button>
-            <button class="reaction-btn" title="Add reaction">
+        <div class="message-hover-actions">
+            <button class="hover-action-btn reaction-btn" title="Add reaction">
                 <i class="feather-smile"></i>
+                React
+            </button>
+            <button class="hover-action-btn reply-btn" title="Reply to message">
+                <i class="feather-message-square"></i>
+                Reply
             </button>
         </div>
         <div class="reactions">
@@ -60,6 +58,7 @@ socket.on('message', (data) => {
                 </span>
             `).join('')}
         </div>
+        <div class="thread-container"></div>
     `;
 
     messageContainer.appendChild(messageElement);
