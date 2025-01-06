@@ -5,7 +5,39 @@ socket.on('connect', () => {
 });
 
 socket.on('message', (data) => {
-    renderMessage(data);
+    const messageContainer = document.getElementById('message-container');
+    const placeholder = messageContainer.querySelector('.no-messages-placeholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message');
+    messageElement.dataset.messageId = data.id;
+
+    messageElement.innerHTML = `
+        <div class="message-header">
+            <span class="username">${data.user}</span>
+            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+        </div>
+        <div class="message-content">${data.content}</div>
+        <div class="message-actions">
+            <button class="pin-btn ${data.is_pinned ? 'active' : ''}" 
+                title="${data.is_pinned ? `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` : 'Pin message'}">
+                <i class="feather-pin"></i>
+            </button>
+            <button class="bookmark-btn" title="Bookmark message">
+                <i class="feather-bookmark"></i>
+            </button>
+            <button class="reaction-btn" title="Add reaction">
+                <i class="feather-smile"></i>
+            </button>
+        </div>
+        <div class="reactions"></div>
+    `;
+
+    messageContainer.appendChild(messageElement);
+    messageContainer.scrollTop = messageContainer.scrollHeight;
 });
 
 socket.on('status_change', (data) => {
