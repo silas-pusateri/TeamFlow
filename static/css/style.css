@@ -141,16 +141,15 @@ body {
 
 /* Thread styles */
 .thread-container {
-    display: none;
     margin: 0.5rem 0 0.5rem 2rem;
     padding: 1rem;
     border-left: 2px solid var(--border-color);
     background-color: rgba(0, 0, 0, 0.02);
     border-radius: 0 8px 8px 0;
+    display: none;
 }
 
-.thread-container.active,
-.thread-container[style*="display: block"] {
+.thread-container.active {
     display: block;
 }
 
@@ -420,18 +419,4 @@ body {
 
 .status-dot.offline {
     background-color: #95a5a6;
-}
-
-.reply-input {
-    margin-top: 1rem;
-    padding: 1rem;
-    background-color: var(--bg-color);
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-}
-
-.reply-input textarea {
-    width: 100%;
-    min-height: 60px;
-    margin-bottom: 0.5rem;
 }
