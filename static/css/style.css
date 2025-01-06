@@ -263,34 +263,6 @@ body {
     background-color: var(--secondary-color);
 }
 
-.thread-container {
-    margin-left: 2rem;
-    padding-left: 1rem;
-    border-left: 2px solid var(--border-color);
-    margin-top: 0.5rem;
-    display: none;
-}
-
-.thread-container.active {
-    display: block;
-}
-
-.thread-message {
-    padding: 4px 8px;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.thread-message .username {
-    font-weight: bold;
-    margin-right: 8px;
-}
-
-.thread-message .timestamp {
-    color: #666;
-    font-size: 0.8rem;
-}
-
 /* Hover actions for messages */
 .message-hover-actions {
     position: absolute;
@@ -385,4 +357,77 @@ body {
 .no-messages-placeholder p {
     margin: 0;
     line-height: 1.5;
+}
+
+
+/* Added styles for reply context and thread display */
+.reply-context {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.reply-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reply-label {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.reply-preview {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.cancel-reply-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.cancel-reply-btn:hover {
+    opacity: 1;
+}
+
+.thread-container {
+    margin-left: 2rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--border-color);
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.thread-container.active {
+    display: block;
+}
+
+.thread-message {
+    padding: 4px 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.thread-message .username {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.thread-message .timestamp {
+    color: #666;
+    font-size: 0.8rem;
 }

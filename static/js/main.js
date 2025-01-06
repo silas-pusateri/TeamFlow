@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageInput = document.getElementById('message-input');
     const channelList = document.getElementById('channel-list');
     let currentChannel = null;
+    let replyingTo = null;
 
     // Theme toggle
     const themeToggle = document.getElementById('theme-toggle');
@@ -15,6 +16,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-theme');
     }
+
+    // Create reply context container
+    const replyContext = document.createElement('div');
+    replyContext.className = 'reply-context';
+    replyContext.style.display = 'none';
+    messageInput.parentElement.insertBefore(replyContext, messageInput);
+
+    // Create cancel reply button
+    const cancelReplyButton = document.createElement('button');
+    cancelReplyButton.className = 'cancel-reply-btn';
+    cancelReplyButton.innerHTML = '×';
+    cancelReplyButton.addEventListener('click', cancelReply);
+    replyContext.appendChild(cancelReplyButton);
 
     // Channel selection
     channelList.addEventListener('click', (e) => {
@@ -49,11 +63,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function sendMessage() {
         const content = messageInput.value.trim();
         if (content && currentChannel) {
-            socket.emit('message', {
+            const messageData = {
                 content: content,
                 channel_id: currentChannel
-            });
+            };
+
+            if (replyingTo) {
+                messageData.parent_id = replyingTo.messageId;
+            }
+
+            socket.emit(replyingTo ? 'thread_reply' : 'message', messageData);
             messageInput.value = '';
+            cancelReply();
         }
     }
 
@@ -72,6 +93,9 @@ document.addEventListener('DOMContentLoaded', function() {
         currentChannel = channelId;
         socket.emit('join', { channel: channelId });
 
+        // Reset reply state when switching channels
+        cancelReply();
+
         // Highlight selected channel
         document.querySelectorAll('.channel-item').forEach(item => {
             item.classList.remove('active');
@@ -81,6 +105,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Message actions (Pin, Bookmark, Reaction)
+    messageContainer.addEventListener('click', (e) => {
+        const messageElement = e.target.closest('.message');
+        if (!messageElement) return;
+
+        const messageId = messageElement.dataset.messageId;
+
+        if (e.target.classList.contains('reaction-btn')) {
+            showEmojiPicker(messageId, e.target.getBoundingClientRect());
+        } else if (e.target.classList.contains('reply-btn')) {
+            const username = messageElement.querySelector('.username').textContent;
+            const content = messageElement.querySelector('.message-content').textContent;
+            setReplyContext(messageId, username, content);
+        }
+    });
+
+    function setReplyContext(messageId, username, content) {
+        replyingTo = { messageId, username, content };
+        replyContext.style.display = 'flex';
+        replyContext.innerHTML = `
+            <div class="reply-info">
+                <span class="reply-label">Replying to ${username}</span>
+                <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+            </div>
+            <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+        `;
+        messageInput.focus();
+    }
+
+    function cancelReply() {
+        replyingTo = null;
+        replyContext.style.display = 'none';
+    }
+
+    window.cancelReply = cancelReply;  // Make it accessible globally for the onclick handler
+
     // Create emoji picker element
     const emojiPicker = document.createElement('div');
     emojiPicker.className = 'emoji-picker';
@@ -89,22 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀', 
                          '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
-
-    // Message actions (Pin, Bookmark, Reaction)
-    messageContainer.addEventListener('click', (e) => {
-        const messageElement = e.target.closest('.message');
-        if (!messageElement) return;
-
-        const messageId = messageElement.dataset.messageId;
-
-        if (e.target.classList.contains('pin-btn')) {
-            socket.emit('pin_message', { message_id: messageId });
-        } else if (e.target.classList.contains('bookmark-btn')) {
-            socket.emit('bookmark_message', { message_id: messageId, note: '' });
-        } else if (e.target.classList.contains('reaction-btn')) {
-            showEmojiPicker(messageId, e.target.getBoundingClientRect());
-        }
-    });
 
     function showEmojiPicker(messageId, buttonRect) {
         emojiPicker.innerHTML = commonEmojis.map(emoji =>
