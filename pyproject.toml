@@ -1,0 +1,16 @@
+[project]
+name = "repl-nix-teamflow"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "email-validator>=2.2.0",
+    "flask>=3.1.0",
+    "flask-login>=0.6.3",
+    "flask-socketio>=5.5.1",
+    "flask-sqlalchemy>=3.1.1",
+    "psycopg2-binary>=2.9.10",
+    "pyjwt>=2.10.1",
+    "sqlalchemy>=2.0.36",
+    "werkzeug>=3.1.3",
+]
