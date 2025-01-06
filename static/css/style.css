@@ -249,3 +249,22 @@ body {
 .pinned-message i {
     color: var(--primary-color);
 }
+
+.no-messages-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    margin-top: 2rem;
+    text-align: center;
+    color: #666;
+    font-size: 1.1rem;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.no-messages-placeholder p {
+    margin: 0;
+    line-height: 1.5;
+}

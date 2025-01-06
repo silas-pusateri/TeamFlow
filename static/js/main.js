@@ -63,7 +63,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Clear messages before joining new channel
-        messageContainer.innerHTML = '';
+        messageContainer.innerHTML = `
+            <div class="no-messages-placeholder">
+                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+            </div>
+        `;
 
         currentChannel = channelId;
         socket.emit('join', { channel: channelId });
@@ -78,6 +82,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderMessage(message) {
+        // Remove the no-messages placeholder if it exists
+        const placeholder = messageContainer.querySelector('.no-messages-placeholder');
+        if (placeholder) {
+            placeholder.remove();
+        }
+
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
         messageElement.dataset.messageId = message.id;
