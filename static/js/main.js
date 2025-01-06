@@ -81,57 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderMessage(message) {
-        // Remove the no-messages placeholder if it exists
-        const placeholder = messageContainer.querySelector('.no-messages-placeholder');
-        if (placeholder) {
-            placeholder.remove();
-        }
-
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-        messageElement.dataset.messageId = message.id;
-
-        messageElement.innerHTML = `
-            <div class="message-header">
-                <span class="username">${message.user}</span>
-                <span class="timestamp">${new Date(message.timestamp).toLocaleString()}</span>
-            </div>
-            <div class="message-content">${message.content}</div>
-            <div class="message-actions">
-                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" 
-                    title="${message.is_pinned ? `Pinned by ${message.pinned_by} on ${new Date(message.pinned_at).toLocaleString()}` : 'Pin message'}">
-                    <i class="feather-pin"></i>
-                </button>
-                <button class="bookmark-btn" title="Bookmark message">
-                    <i class="feather-bookmark"></i>
-                </button>
-                <button class="reaction-btn" title="Add reaction">
-                    <i class="feather-smile"></i>
-                </button>
-            </div>
-            <div class="reactions"></div>
-        `;
-
-        messageContainer.appendChild(messageElement);
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-    }
-
-    // Socket event listeners
-    socket.on('message', (data) => {
-        renderMessage(data);
-    });
-
-    socket.on('status_change', (data) => {
-        const userElement = document.querySelector(`[data-user-id="${data.user_id}"]`);
-        if (userElement) {
-            const statusDot = userElement.querySelector('.status-dot');
-            statusDot.classList.remove('online', 'offline');
-            statusDot.classList.add(data.status);
-        }
-    });
-
-
     // Pin and Bookmark handling
     messageContainer.addEventListener('click', (e) => {
         const messageElement = e.target.closest('.message');
@@ -200,19 +149,5 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideEmojiPicker() {
         emojiPicker.style.display = 'none';
         document.removeEventListener('click', handleClickOutside);
-    }
-
-    // Thread view toggle
-    messageContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('thread-toggle')) {
-            const messageId = e.target.closest('.message').dataset.messageId;
-            toggleThread(messageId);
-        }
-    });
-
-    function toggleThread(messageId) {
-        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        const threadContainer = messageElement.querySelector('.thread-container');
-        threadContainer.style.display = threadContainer.style.display === 'none' ? 'block' : 'none';
     }
 });
