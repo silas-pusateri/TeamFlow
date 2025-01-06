@@ -1,7 +1,7 @@
 from flask_socketio import emit, join_room, leave_room
 from flask_login import current_user
 from app import socketio, db
-from models import Message, Channel, Thread, Reaction, UserBookmark
+from models import Message, Channel, Thread, Reaction, UserBookmark, User # Added User import
 from datetime import datetime
 
 @socketio.on('connect')
@@ -29,7 +29,18 @@ def handle_disconnect():
 def handle_join(data):
     room = data['channel']
     join_room(room)
-    emit('status', {'msg': f'{current_user.username} has joined the channel.'}, room=room)
+    # Send last 50 messages when joining a channel
+    messages = Message.query.filter_by(channel_id=room).order_by(Message.timestamp.desc()).limit(50).all()
+    for message in reversed(messages):
+        emit('message', {
+            'id': message.id,
+            'content': message.content,
+            'user': message.user.username,
+            'timestamp': message.timestamp.isoformat(),
+            'is_pinned': message.is_pinned,
+            'pinned_by': message.pinned_by_id and User.query.get(message.pinned_by_id).username,
+            'pinned_at': message.pinned_at and message.pinned_at.isoformat()
+        })
 
 @socketio.on('message')
 def handle_message(data):
@@ -46,7 +57,10 @@ def handle_message(data):
             'id': message.id,
             'content': message.content,
             'user': current_user.username,
-            'timestamp': message.timestamp.isoformat()
+            'timestamp': message.timestamp.isoformat(),
+            'is_pinned': False,
+            'pinned_by': None,
+            'pinned_at': None
         }, room=data['channel_id'])
 
 @socketio.on('pin_message')

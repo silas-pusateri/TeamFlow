@@ -46,27 +46,6 @@ document.addEventListener('DOMContentLoaded', function() {
         switchChannel(channelId);
     }
 
-    // Pin and Bookmark handling
-    messageContainer.addEventListener('click', (e) => {
-        const messageElement = e.target.closest('.message');
-        if (!messageElement) return;
-
-        const messageId = messageElement.dataset.messageId;
-
-        if (e.target.classList.contains('pin-btn')) {
-            socket.emit('pin_message', {
-                message_id: messageId
-            });
-        } else if (e.target.classList.contains('bookmark-btn')) {
-            socket.emit('bookmark_message', {
-                message_id: messageId,
-                note: '' // Optional note feature can be added later
-            });
-        } else if (e.target.classList.contains('reaction-btn')) {
-            showEmojiPicker(messageId, e.target.getBoundingClientRect());
-        }
-    });
-
     function sendMessage() {
         const content = messageInput.value.trim();
         if (content && currentChannel) {
@@ -82,6 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentChannel) {
             socket.emit('leave', { channel: currentChannel });
         }
+
+        // Clear messages before joining new channel
+        messageContainer.innerHTML = '';
+
         currentChannel = channelId;
         socket.emit('join', { channel: channelId });
 
@@ -92,21 +75,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.classList.add('active');
             }
         });
-
-        // Clear messages and load channel messages
-        messageContainer.innerHTML = '';
-        loadChannelMessages(channelId);
-    }
-
-    function loadChannelMessages(channelId) {
-        // For now, we'll just clear the container as we don't have an API endpoint yet
-        messageContainer.innerHTML = '';
     }
 
     function renderMessage(message) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
         messageElement.dataset.messageId = message.id;
+
         messageElement.innerHTML = `
             <div class="message-header">
                 <span class="username">${message.user}</span>
@@ -114,10 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="message-content">${message.content}</div>
             <div class="message-actions">
-                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" title="${message.is_pinned ? `Pinned by ${message.pinned_by}` : 'Pin message'}">
+                <button class="pin-btn ${message.is_pinned ? 'active' : ''}" 
+                    title="${message.is_pinned ? `Pinned by ${message.pinned_by} on ${new Date(message.pinned_at).toLocaleString()}` : 'Pin message'}">
                     <i class="feather-pin"></i>
                 </button>
-                <button class="bookmark-btn ${message.is_bookmarked ? 'active' : ''}" title="Bookmark message">
+                <button class="bookmark-btn" title="Bookmark message">
                     <i class="feather-bookmark"></i>
                 </button>
                 <button class="reaction-btn" title="Add reaction">
@@ -125,11 +101,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
             <div class="reactions"></div>
-            <div class="thread-container" style="display: none;"></div>
         `;
+
         messageContainer.appendChild(messageElement);
         messageContainer.scrollTop = messageContainer.scrollHeight;
     }
+
+    // Socket event listeners
+    socket.on('message', (data) => {
+        renderMessage(data);
+    });
+
+    socket.on('status_change', (data) => {
+        const userElement = document.querySelector(`[data-user-id="${data.user_id}"]`);
+        if (userElement) {
+            const statusDot = userElement.querySelector('.status-dot');
+            statusDot.classList.remove('online', 'offline');
+            statusDot.classList.add(data.status);
+        }
+    });
+
+
+    // Pin and Bookmark handling
+    messageContainer.addEventListener('click', (e) => {
+        const messageElement = e.target.closest('.message');
+        if (!messageElement) return;
+
+        const messageId = messageElement.dataset.messageId;
+
+        if (e.target.classList.contains('pin-btn')) {
+            socket.emit('pin_message', { message_id: messageId });
+        } else if (e.target.classList.contains('bookmark-btn')) {
+            socket.emit('bookmark_message', { message_id: messageId, note: '' });
+        } else if (e.target.classList.contains('reaction-btn')) {
+            showEmojiPicker(messageId, e.target.getBoundingClientRect());
+        }
+    });
 
     // Create emoji picker element
     const emojiPicker = document.createElement('div');
@@ -184,23 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
         emojiPicker.style.display = 'none';
         document.removeEventListener('click', handleClickOutside);
     }
-
-    // Pin and Bookmark handling (moved from above for better organization)
-    messageContainer.addEventListener('click', (e) => {
-        const messageElement = e.target.closest('.message');
-        if (!messageElement) return;
-
-        const messageId = messageElement.dataset.messageId;
-
-        if (e.target.classList.contains('pin-btn')) {
-            socket.emit('pin_message', { message_id: messageId });
-        } else if (e.target.classList.contains('bookmark-btn')) {
-            socket.emit('bookmark_message', { message_id: messageId, note: '' });
-        } else if (e.target.classList.contains('reaction-btn')) {
-            showEmojiPicker(messageId, e.target.getBoundingClientRect());
-        }
-    });
-
 
     // Thread view toggle
     messageContainer.addEventListener('click', (e) => {
