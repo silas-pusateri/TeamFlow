@@ -265,19 +265,21 @@ body {
 
 /* Hover actions for messages */
 .message-hover-actions {
+    display: none;
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    display: none;
     gap: 8px;
     background-color: var(--bg-color);
     padding: 4px;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 }
 
-.message:hover .message-hover-actions {
+.message:hover .message-hover-actions,
+.thread-message:hover .message-hover-actions {
     display: flex;
 }
 
@@ -428,20 +430,7 @@ body {
 }
 
 .thread-message .message-hover-actions {
-    display: none;
-    position: absolute;
     right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    gap: 8px;
-    background-color: var(--bg-color);
-    padding: 4px;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.thread-message:hover .message-hover-actions {
-    display: flex;
 }
 
 .thread-message .reactions {
@@ -451,6 +440,7 @@ body {
     gap: 4px;
 }
 
+.dark-theme .message:hover,
 .dark-theme .thread-message:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }

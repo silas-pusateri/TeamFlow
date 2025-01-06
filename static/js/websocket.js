@@ -79,7 +79,7 @@ function createThreadMessageHTML(thread) {
                 <span class="username">${thread.user}</span>
                 <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
             </div>
-            <div class="content">${thread.content}</div>
+            <div class="message-content">${thread.content}</div>
             <div class="message-hover-actions">
                 <button class="hover-action-btn reaction-btn" title="Add reaction">
                     <i class="feather-smile"></i>
