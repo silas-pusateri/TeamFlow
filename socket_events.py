@@ -1,8 +1,9 @@
 from flask_socketio import emit, join_room, leave_room
 from flask_login import current_user
 from app import socketio, db
-from models import Message, Channel, Thread, Reaction, UserBookmark, User # Added User import
+from models import Message, Channel, Thread, Reaction, UserBookmark, User
 from datetime import datetime
+from sqlalchemy import and_
 
 @socketio.on('connect')
 def handle_connect():
@@ -13,17 +14,10 @@ def handle_connect():
             'user_id': current_user.id,
             'status': 'online'
         }, broadcast=True)
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    if current_user.is_authenticated:
-        current_user.is_online = False
-        current_user.last_seen = datetime.utcnow()
-        db.session.commit()
-        emit('status_change', {
-            'user_id': current_user.id,
-            'status': 'offline'
-        }, broadcast=True)
+        # Send current user information
+        emit('current_user', {
+            'user_id': current_user.id
+        })
 
 @socketio.on('join')
 def handle_join(data):
@@ -32,14 +26,22 @@ def handle_join(data):
     # Send last 50 messages when joining a channel
     messages = Message.query.filter_by(channel_id=room).order_by(Message.timestamp.desc()).limit(50).all()
     for message in reversed(messages):
+        # Include reactions with the message
+        reactions = [{
+            'emoji': reaction.emoji,
+            'user_id': reaction.user_id,
+            'user': reaction.user.username
+        } for reaction in message.reactions]
+
         emit('message', {
             'id': message.id,
             'content': message.content,
             'user': message.user.username,
             'timestamp': message.timestamp.isoformat(),
             'is_pinned': message.is_pinned,
-            'pinned_by': message.pinned_by_id and User.query.get(message.pinned_by_id).username,
-            'pinned_at': message.pinned_at and message.pinned_at.isoformat()
+            'pinned_by': message.pinned_by.username if message.pinned_by else None,
+            'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
+            'reactions': reactions
         })
 
 @socketio.on('message')
@@ -60,7 +62,8 @@ def handle_message(data):
             'timestamp': message.timestamp.isoformat(),
             'is_pinned': False,
             'pinned_by': None,
-            'pinned_at': None
+            'pinned_at': None,
+            'reactions': []
         }, room=data['channel_id'])
 
 @socketio.on('pin_message')
@@ -134,16 +137,46 @@ def handle_thread_reply(data):
 @socketio.on('reaction')
 def handle_reaction(data):
     if current_user.is_authenticated:
-        reaction = Reaction(
-            emoji=data['emoji'],
-            message_id=data['message_id'],
-            user_id=current_user.id
-        )
-        db.session.add(reaction)
-        db.session.commit()
+        message_id = data['message_id']
+        emoji = data['emoji']
 
+        # Check if user already reacted with this emoji
+        existing_reaction = Reaction.query.filter(and_(
+            Reaction.message_id == message_id,
+            Reaction.user_id == current_user.id,
+            Reaction.emoji == emoji
+        )).first()
+
+        if existing_reaction:
+            # Remove reaction if it exists
+            db.session.delete(existing_reaction)
+            db.session.commit()
+        else:
+            # Add new reaction
+            reaction = Reaction(
+                emoji=emoji,
+                message_id=message_id,
+                user_id=current_user.id
+            )
+            db.session.add(reaction)
+            db.session.commit()
+
+        # Broadcast the reaction update
+        message = Message.query.get(message_id)
         emit('reaction_added', {
-            'message_id': data['message_id'],
-            'emoji': data['emoji'],
-            'user_id': current_user.id
+            'message_id': message_id,
+            'emoji': emoji,
+            'user_id': current_user.id,
+            'user': current_user.username
+        }, room=message.channel_id)
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if current_user.is_authenticated:
+        current_user.is_online = False
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()
+        emit('status_change', {
+            'user_id': current_user.id,
+            'status': 'offline'
         }, broadcast=True)

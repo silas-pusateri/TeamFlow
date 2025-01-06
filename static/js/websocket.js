@@ -2,6 +2,8 @@ let socket = io();
 
 socket.on('connect', () => {
     console.log('Connected to WebSocket');
+    // Request current user ID from server
+    socket.emit('get_current_user');
 });
 
 socket.on('message', (data) => {
@@ -14,6 +16,21 @@ socket.on('message', (data) => {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
     messageElement.dataset.messageId = data.id;
+
+    // Group reactions by emoji
+    const reactionGroups = {};
+    if (data.reactions) {
+        data.reactions.forEach(reaction => {
+            if (!reactionGroups[reaction.emoji]) {
+                reactionGroups[reaction.emoji] = {
+                    count: 0,
+                    users: new Set()
+                };
+            }
+            reactionGroups[reaction.emoji].count++;
+            reactionGroups[reaction.emoji].users.add(reaction.user_id);
+        });
+    }
 
     messageElement.innerHTML = `
         <div class="message-header">
@@ -33,11 +50,79 @@ socket.on('message', (data) => {
                 <i class="feather-smile"></i>
             </button>
         </div>
-        <div class="reactions"></div>
+        <div class="reactions">
+            ${Object.entries(reactionGroups).map(([emoji, {count, users}]) => `
+                <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
+                      data-emoji="${emoji}" 
+                      title="${count} ${count === 1 ? 'reaction' : 'reactions'}">
+                    ${emoji}
+                    <span class="reaction-count">${count}</span>
+                </span>
+            `).join('')}
+        </div>
     `;
 
     messageContainer.appendChild(messageElement);
     messageContainer.scrollTop = messageContainer.scrollHeight;
+});
+
+socket.on('reaction_added', (data) => {
+    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (message) {
+        const reactionsContainer = message.querySelector('.reactions');
+        const existingReaction = reactionsContainer.querySelector(`[data-emoji="${data.emoji}"]`);
+
+        if (existingReaction) {
+            // Update existing reaction
+            const countElement = existingReaction.querySelector('.reaction-count');
+            const currentCount = parseInt(countElement.textContent);
+
+            if (data.user_id === currentUserId) {
+                if (existingReaction.classList.contains('active')) {
+                    // Remove reaction
+                    if (currentCount === 1) {
+                        existingReaction.remove();
+                    } else {
+                        countElement.textContent = currentCount - 1;
+                        existingReaction.classList.remove('active');
+                    }
+                } else {
+                    // Add reaction
+                    countElement.textContent = currentCount + 1;
+                    existingReaction.classList.add('active');
+                }
+            } else {
+                // Another user's reaction
+                countElement.textContent = currentCount + 1;
+            }
+        } else {
+            // Create new reaction
+            const reaction = document.createElement('span');
+            reaction.classList.add('reaction');
+            if (data.user_id === currentUserId) {
+                reaction.classList.add('active');
+            }
+            reaction.dataset.emoji = data.emoji;
+            reaction.innerHTML = `
+                ${data.emoji}
+                <span class="reaction-count">1</span>
+            `;
+            reactionsContainer.appendChild(reaction);
+        }
+    }
+});
+
+// Add event handler for clicking on reactions
+document.addEventListener('click', (e) => {
+    const reaction = e.target.closest('.reaction');
+    if (reaction) {
+        const messageId = reaction.closest('.message').dataset.messageId;
+        const emoji = reaction.dataset.emoji;
+        socket.emit('reaction', {
+            message_id: messageId,
+            emoji: emoji
+        });
+    }
 });
 
 socket.on('status_change', (data) => {
@@ -78,17 +163,6 @@ socket.on('message_bookmarked', (data) => {
     }
 });
 
-socket.on('reaction_added', (data) => {
-    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
-    if (message) {
-        const reactionsContainer = message.querySelector('.reactions');
-        const reaction = document.createElement('span');
-        reaction.classList.add('reaction');
-        reaction.textContent = data.emoji;
-        reactionsContainer.appendChild(reaction);
-    }
-});
-
 function updateUserStatus(data) {
     const userElement = document.querySelector(`[data-user-id="${data.user_id}"]`);
     if (userElement) {
@@ -97,3 +171,9 @@ function updateUserStatus(data) {
         statusDot.classList.add(data.status);
     }
 }
+
+// Add currentUserId to window scope for reaction handling
+window.currentUserId = null;
+socket.on('current_user', (data) => {
+    window.currentUserId = data.user_id;
+});

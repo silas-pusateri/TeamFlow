@@ -140,14 +140,60 @@ body {
 
 .reactions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     margin-top: 0.5rem;
 }
 
 .reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     padding: 0.25rem 0.5rem;
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.reaction:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.reaction.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.reaction-count {
+    font-size: 0.8rem;
+    min-width: 1rem;
+    text-align: center;
+}
+
+.emoji-picker {
+    position: fixed;
+    display: none;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 200px;
+}
+
+.emoji-option {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.emoji-option:hover {
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .input-container {
@@ -205,31 +251,6 @@ body {
 
 .status-dot.offline {
     background-color: #95a5a6;
-}
-
-.emoji-picker {
-    position: fixed;
-    display: none;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-width: 200px;
-}
-
-.emoji-option {
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
-
-.emoji-option:hover {
-    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .pinned-messages {
