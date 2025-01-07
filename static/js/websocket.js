@@ -106,14 +106,14 @@ function createMessageHTML(data, reactionGroups) {
 function updateThreadCount(parentMessage) {
     const threadContainer = parentMessage.querySelector('.thread-container');
     const threadCount = threadContainer.querySelectorAll('.thread-message').length;
-    
+
     let countDisplay = parentMessage.querySelector('.thread-count');
     if (!countDisplay) {
         countDisplay = document.createElement('div');
         countDisplay.className = 'thread-count';
         parentMessage.querySelector('.message-content').appendChild(countDisplay);
     }
-    
+
     countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
     countDisplay.style.display = 'block';
 }
@@ -185,11 +185,12 @@ socket.on('thread_message', (data) => {
         threadContainer.classList.add('active');
     }
 
-    // Create thread message element
+    // Create thread message element and maintain hierarchy
     const threadMessage = document.createElement('div');
     threadMessage.classList.add('thread-message');
     threadMessage.dataset.messageId = data.id;
     threadMessage.dataset.parentId = data.parent_id;
+    threadMessage.dataset.repliedToId = data.replied_to_id;
 
     // Parse message content for channel references
     data.content = parseChannelReferences(data.content);
@@ -359,7 +360,7 @@ function parseChannelReferences(content) {
         const channelList = document.getElementById('channel-list');
         const channels = Array.from(channelList.getElementsByClassName('channel-item'));
         const channel = channels.find(ch => ch.textContent.trim().substring(2) === channelName);
-        
+
         if (channel) {
             const channelId = channel.dataset.channelId;
             return `<a href="#" class="channel-reference" onclick="window.switchChannel('${channelId}'); return false;">#${channelName}</a>`;

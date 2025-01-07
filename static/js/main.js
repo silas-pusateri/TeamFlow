@@ -226,18 +226,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageInput = document.getElementById('message-input');
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         
-        // Get the top-level parent message for the thread
+        // Get correct parent message ID based on thread hierarchy
         const threadContainer = messageElement.closest('.thread-container');
+        const messageContainer = messageElement.closest('.message');
         const parentMessageId = threadContainer ? 
             threadContainer.dataset.parentId : 
-            messageElement.dataset.messageId;
+            messageContainer ? messageContainer.dataset.messageId : messageId;
         
         window.replyingTo = { 
             messageId: messageId,
             parentMessageId: parentMessageId,
             username: username, 
             content: content,
-            isThreadReply: threadContainer !== null
+            isThreadReply: true
         };
 
         if (replyContext) {
