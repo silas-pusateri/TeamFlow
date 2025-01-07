@@ -164,7 +164,7 @@ def handle_reaction(data):
                 message = Thread.query.get(message_id)
             else:
                 message = Message.query.get(message_id)
-                
+
             if not message:
                 return
 
@@ -424,4 +424,23 @@ def handle_search(data):
 
         except Exception as e:
             logging.error(f"Error in handle_search: {str(e)}")
+            db.session.rollback()
+
+@socketio.on('delete_message')
+def handle_delete_message(data):
+    if current_user.is_authenticated:
+        try:
+            message_id = data['message_id']
+            message = Message.query.get(message_id)
+
+            if message and message.user_id == current_user.id:
+                db.session.delete(message)
+                db.session.commit()
+
+                emit('message_deleted', {
+                    'message_id': message_id
+                }, room=message.channel_id)
+
+        except Exception as e:
+            logging.error(f"Error in handle_delete_message: {str(e)}")
             db.session.rollback()

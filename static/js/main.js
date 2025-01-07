@@ -587,6 +587,37 @@ window.copyMessageLink = function(messageId) {
     navigator.clipboard.writeText(link);
 };
 
+window.showDeleteConfirmation = function(messageId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    const checkbox = document.getElementById('deleteConfirmCheckbox');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    // Reset checkbox and button state
+    checkbox.checked = false;
+    deleteBtn.disabled = true;
+    
+    // Handle checkbox change
+    checkbox.onchange = function() {
+        deleteBtn.disabled = !this.checked;
+    };
+    
+    // Handle delete confirmation
+    deleteBtn.onclick = function() {
+        socket.emit('delete_message', { message_id: messageId });
+        modal.hide();
+    };
+    
+    modal.show();
+};
+
+// Handle message deletion response
+socket.on('message_deleted', function(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (messageElement) {
+        messageElement.remove();
+    }
+});
+
 // Close menus when clicking outside
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.message-menu') && !e.target.closest('.message-menu-btn')) {
