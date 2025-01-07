@@ -1,3 +1,76 @@
+
+// Global emoji picker setup
+const emojiPicker = document.createElement('div');
+emojiPicker.className = 'emoji-picker';
+emojiPicker.style.display = 'none';
+document.body.appendChild(emojiPicker);
+
+const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀',
+                     '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
+
+window.showEmojiPicker = function(messageId, buttonRect) {
+    emojiPicker.innerHTML = commonEmojis.map(emoji =>
+        `<span class="emoji-option" data-emoji="${emoji}">${emoji}</span>`
+    ).join('');
+
+    emojiPicker.style.display = 'flex';
+
+    // Position the picker near the reaction button
+    const pickerRect = emojiPicker.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+
+    // Calculate position to ensure the picker stays within viewport
+    let top = buttonRect.top - pickerRect.height;
+    let left = buttonRect.left;
+
+    // Adjust if too close to top
+    if (top < 10) {
+        top = buttonRect.bottom + 5;
+    }
+
+    // Adjust if too close to right edge
+    if (left + pickerRect.width > windowWidth - 10) {
+        left = windowWidth - pickerRect.width - 10;
+    }
+
+    emojiPicker.style.top = `${top}px`;
+    emojiPicker.style.left = `${left}px`;
+
+    // Store the message ID for the reaction handler
+    emojiPicker.dataset.messageId = messageId;
+
+    // Add click handlers for emoji selection
+    const emojiOptions = emojiPicker.querySelectorAll('.emoji-option');
+    emojiOptions.forEach(option => {
+        option.addEventListener('click', handleEmojiSelect);
+    });
+
+    // Close picker when clicking outside
+    document.addEventListener('click', handleClickOutside);
+};
+
+function handleEmojiSelect(e) {
+    const emoji = e.target.dataset.emoji;
+    const messageId = emojiPicker.dataset.messageId;
+    socket.emit('reaction', {
+        message_id: messageId,
+        emoji: emoji
+    });
+    hideEmojiPicker();
+}
+
+function handleClickOutside(e) {
+    if (!emojiPicker.contains(e.target) && !e.target.classList.contains('reaction-btn')) {
+        hideEmojiPicker();
+    }
+}
+
+function hideEmojiPicker() {
+    emojiPicker.style.display = 'none';
+    document.removeEventListener('click', handleClickOutside);
+}
+
 // Define switchChannel in global scope
 window.switchChannel = function(channelId) {
     const socket = io();
@@ -256,77 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.cancelReply = cancelReply;  // Make it accessible globally for the onclick handler
 
-    // Create emoji picker element
-    const emojiPicker = document.createElement('div');
-    emojiPicker.className = 'emoji-picker';
-    emojiPicker.style.display = 'none';
-    document.body.appendChild(emojiPicker);
-
-    const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀',
-                         '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
-
-    function showEmojiPicker(messageId, buttonRect) {
-        emojiPicker.innerHTML = commonEmojis.map(emoji =>
-            `<span class="emoji-option" data-emoji="${emoji}">${emoji}</span>`
-        ).join('');
-
-        emojiPicker.style.display = 'flex';
-
-        // Position the picker near the reaction button
-        const pickerRect = emojiPicker.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const windowWidth = window.innerWidth;
-
-        // Calculate position to ensure the picker stays within viewport
-        let top = buttonRect.top - pickerRect.height;
-        let left = buttonRect.left;
-
-        // Adjust if too close to top
-        if (top < 10) {
-            top = buttonRect.bottom + 5;
-        }
-
-        // Adjust if too close to right edge
-        if (left + pickerRect.width > windowWidth - 10) {
-            left = windowWidth - pickerRect.width - 10;
-        }
-
-        emojiPicker.style.top = `${top}px`;
-        emojiPicker.style.left = `${left}px`;
-
-        // Store the message ID for the reaction handler
-        emojiPicker.dataset.messageId = messageId;
-
-        // Add click handlers for emoji selection
-        const emojiOptions = emojiPicker.querySelectorAll('.emoji-option');
-        emojiOptions.forEach(option => {
-            option.addEventListener('click', handleEmojiSelect);
-        });
-
-        // Close picker when clicking outside
-        document.addEventListener('click', handleClickOutside);
-    }
-
-    function handleEmojiSelect(e) {
-        const emoji = e.target.dataset.emoji;
-        const messageId = emojiPicker.dataset.messageId;
-        socket.emit('reaction', {
-            message_id: messageId,
-            emoji: emoji
-        });
-        hideEmojiPicker();
-    }
-
-    function handleClickOutside(e) {
-        if (!emojiPicker.contains(e.target) && !e.target.classList.contains('reaction-btn')) {
-            hideEmojiPicker();
-        }
-    }
-
-    function hideEmojiPicker() {
-        emojiPicker.style.display = 'none';
-        document.removeEventListener('click', handleClickOutside);
-    }
+    
 
     // User Status Popup handling
     let currentPopup = null;
