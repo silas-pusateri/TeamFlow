@@ -51,6 +51,10 @@ socket.on('message', (data) => {
         });
     }
 
+    // Add file attachment link if present
+    if (data.attachment_path) {
+        data.content += `\n<a href="/static/uploads/${data.attachment_name}" target="_blank" class="attachment-link">📎 ${data.attachment_name}</a>`;
+    }
     data.content = parseChannelReferences(data.content);
     messageElement.innerHTML = createMessageHTML(data, reactionGroups);
     messageContainer.appendChild(messageElement);
