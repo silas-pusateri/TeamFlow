@@ -55,34 +55,12 @@ document.addEventListener('DOMContentLoaded', function() {
     replyContext.style.display = 'none';
     messageInput.parentElement.insertBefore(replyContext, messageInput);
 
-    // Define cancelReply function in global scope first
-    window.cancelReply = function() {
-        const replyContext = document.querySelector('.reply-context');
-        window.replyingTo = null;
-        if (replyContext) {
-            replyContext.style.display = 'none';
-        }
-    };
-
-    window.setReplyContext = function(messageId, username, content) {
-        const replyContext = document.querySelector('.reply-context');
-        const messageInput = document.getElementById('message-input');
-
-        // Store reply information in window scope
-        window.replyingTo = { messageId, username, content };
-
-        if (replyContext) {
-            replyContext.style.display = 'flex';
-            replyContext.innerHTML = `
-                <div class="reply-info">
-                    <span class="reply-label">Replying to ${username}</span>
-                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
-                </div>
-                <button class="cancel-reply-btn" onclick="window.cancelReply()">×</button>
-            `;
-            messageInput.focus();
-        }
-    };
+    // Create cancel reply button
+    const cancelReplyButton = document.createElement('button');
+    cancelReplyButton.className = 'cancel-reply-btn';
+    cancelReplyButton.innerHTML = '×';
+    cancelReplyButton.addEventListener('click', cancelReply);
+    replyContext.appendChild(cancelReplyButton);
 
     // Channel creation
     const createChannelBtn = document.getElementById('createChannelBtn');
@@ -129,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add click handler to send button
+    // Add click handler to existing send button
     const sendButton = document.querySelector('.send-button');
     if (sendButton) {
         sendButton.addEventListener('click', sendMessage);
@@ -143,7 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function sendMessage() {
-        const messageInput = document.getElementById('message-input');
         const content = messageInput.value.trim();
         if (content && currentChannel) {
             const messageData = {
@@ -151,12 +128,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 channel_id: currentChannel
             };
 
-            if (window.replyingTo) {
-                messageData.parent_id = window.replyingTo.messageId;
+            if (replyingTo) {
+                messageData.parent_id = replyingTo.messageId;
+                messageData.channel_id = currentChannel;
                 socket.emit('thread_reply', messageData);
 
                 // Update thread container immediately
-                const parentMessage = document.querySelector(`[data-message-id="${window.replyingTo.messageId}"]`);
+                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
                 if (parentMessage) {
                     let threadContainer = parentMessage.querySelector('.thread-container');
                     if (!threadContainer) {
@@ -171,12 +149,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             messageInput.value = '';
-            if (typeof window.cancelReply === 'function') {
-                window.cancelReply();
-            }
+            cancelReply();
         }
     }
 
+    window.switchChannel = function(channelId) {
+        if (currentChannel) {
+            socket.emit('leave', { channel: currentChannel });
+        }
+
+        // Clear messages before joining new channel
+        messageContainer.innerHTML = `
+            <div class="no-messages-placeholder">
+                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+            </div>
+        `;
+
+        currentChannel = channelId;
+        socket.emit('join', { channel: channelId });
+        socket.emit('get_channel_info', { channel_id: channelId });
+
+        // Reset reply state when switching channels
+        cancelReply();
+
+        // Highlight selected channel
+        document.querySelectorAll('.channel-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.channelId === channelId) {
+                item.classList.add('active');
+            }
+        });
+    }
 
     // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {
@@ -198,6 +201,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    window.setReplyContext = function(messageId, username, content) {
+        const replyContext = document.querySelector('.reply-context');
+        const messageInput = document.getElementById('message-input');
+        window.replyingTo = { messageId, username, content };
+
+        if (replyContext) {
+            replyContext.style.display = 'flex';
+            replyContext.innerHTML = `
+                <div class="reply-info">
+                    <span class="reply-label">Replying to ${username}</span>
+                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+                </div>
+                <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+            `;
+            messageInput.focus();
+        }
+    };
+
+    function cancelReply() {
+        replyingTo = null;
+        replyContext.style.display = 'none';
+    }
+
+    window.cancelReply = cancelReply;  // Make it accessible globally for the onclick handler
 
     // Create emoji picker element
     const emojiPicker = document.createElement('div');
@@ -526,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const channelFilter = document.getElementById('searchChannelFilter');
         if (channelFilter) {
             channelFilter.innerHTML = '<option value="">All Channels</option>' +
-                data.channels.map(channel =>
+                data.channels.map(channel => 
                     `<option value="${channel.id}">${channel.name}</option>`
                 ).join('');
         }
@@ -658,28 +685,29 @@ document.addEventListener('click', (e) => {
 });
 
 socket.on('search_results', (data) => {
-    if (searchResults) {
-        if (data.results.length === 0) {
-            searchResults.innerHTML = `
-                <div class="p-4 text-center">
-                    <p>No messages found matching your search.</p>
-                </div>
-            `;
-        } else {
-            searchResults.innerHTML = data.results.map(result => `
-                <div class="search-result-item">
-                    <div class="search-result-header">
-                        <span class="search-result-channel"># ${result.channel}</span>
-                        <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
+        if (searchResults) {
+            if (data.results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="p-4 text-center">
+                        <p>No messages found matching your search.</p>
                     </div>
-                    <div class="search-result-content">${result.content}</div>
-                    <div class="search-result-user">
-                        <span class="username" data-user-id="${result.user_id}">${result.user}</span>
+                `;
+            } else {
+                searchResults.innerHTML = data.results.map(result => `
+                    <div class="search-result-item">
+                        <div class="search-result-header">
+                            <span class="search-result-channel"># ${result.channel}</span>
+                            <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
+                        </div>
+                        <div class="search-result-content">${result.content}</div>
+                        <div class="search-result-user">
+                            <span class="username" data-user-id="${result.user_id}">${result.user}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
+            searchResultsModal.show();
         }
-        searchResultsModal.show();
-    }
+    });
 });
 });
