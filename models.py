@@ -11,12 +11,12 @@ class User(UserMixin, db.Model):
     is_online = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default="Available")
     custom_status = db.Column(db.String(100))
-    status_emoji = db.Column(db.String(32))  # New: Status emoji
+    status_emoji = db.Column(db.String(32))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-    role = db.Column(db.String(20), default="member")  # New: User role
-    is_admin = db.Column(db.Boolean, default=False)  # Admin status
-    join_date = db.Column(db.DateTime, default=datetime.utcnow)  # New: Join date
-    bio = db.Column(db.String(500))  # New: User bio
+    role = db.Column(db.String(20), default="member")
+    is_admin = db.Column(db.Boolean, default=False)
+    join_date = db.Column(db.DateTime, default=datetime.utcnow)
+    bio = db.Column(db.String(500))
     messages = db.relationship('Message', backref='user', lazy=True, foreign_keys='Message.user_id')
     pinned_messages = db.relationship('Message', backref='pinned_by', lazy=True, foreign_keys='Message.pinned_by_id')
     bookmarks = db.relationship('UserBookmark', backref='user', lazy=True)
