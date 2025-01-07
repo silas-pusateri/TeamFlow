@@ -420,3 +420,43 @@ body {
 .status-dot.offline {
     background-color: #95a5a6;
 }
+
+/* Auth page styles */
+.auth-container {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    min-height: 100vh;
+}
+
+.auth-container .card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.auth-container .card-title {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+}
+
+.auth-container .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    padding: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.auth-container .btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.dark-theme .auth-container .card {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+}
+
+.dark-theme .auth-container .card-title {
+    color: var(--text-color);
+}
