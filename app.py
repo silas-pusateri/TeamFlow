@@ -69,7 +69,8 @@ with app.app_context():
     if not default_channel:
         default_channel = Channel(
             name="General",
-            description="Default channel for general discussions"
+            description="Default channel for general discussions",
+            created_by_id=0
         )
         db.session.add(default_channel)
         db.session.commit()
