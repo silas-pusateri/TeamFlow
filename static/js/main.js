@@ -1,3 +1,48 @@
+// Global variables
+let currentChannel = null;
+let messageContainer = null;
+
+// Global switchChannel function
+function switchChannel(channelId) {
+    if (!messageContainer) {
+        messageContainer = document.getElementById('message-container');
+    }
+    
+    if (currentChannel) {
+        socket.emit('leave', { channel: currentChannel });
+    }
+
+    // Clear messages before joining new channel
+    messageContainer.innerHTML = `
+        <div class="no-messages-placeholder">
+            <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+        </div>
+    `;
+
+    currentChannel = channelId;
+    socket.emit('join', { channel: channelId });
+    socket.emit('get_channel_info', { channel_id: channelId });
+
+    // Reset reply state when switching channels
+    if (typeof cancelReply === 'function') {
+        cancelReply();
+    }
+
+    // Highlight selected channel
+    document.querySelectorAll('.channel-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.channelId === channelId) {
+            item.classList.add('active');
+        }
+    });
+    
+    // Scroll to top of message container
+    messageContainer.scrollTop = 0;
+}
+
+// Make switchChannel globally accessible
+window.switchChannel = switchChannel;
+
 document.addEventListener('DOMContentLoaded', function() {
     const messageContainer = document.getElementById('message-container');
     const messageInput = document.getElementById('message-input');
@@ -106,36 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.switchChannel = function(channelId) {
-        if (currentChannel) {
-            socket.emit('leave', { channel: currentChannel });
-        }
-
-        // Clear messages before joining new channel
-        messageContainer.innerHTML = `
-            <div class="no-messages-placeholder">
-                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
-            </div>
-        `;
-
-        currentChannel = channelId;
-        socket.emit('join', { channel: channelId });
-        socket.emit('get_channel_info', { channel_id: channelId });
-
-        // Reset reply state when switching channels
-        cancelReply();
-
-        // Highlight selected channel
-        document.querySelectorAll('.channel-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.dataset.channelId === channelId) {
-                item.classList.add('active');
-            }
-        });
-        
-        // Scroll to top of message container
-        messageContainer.scrollTop = 0;
-    }
+    // Remove window.switchChannel from here as it's now defined globally
 
     // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {
