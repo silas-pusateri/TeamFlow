@@ -340,13 +340,41 @@ def handle_search(data):
 
             logging.info(f"Searching for keyword: {keyword}")
 
-            # Search in message content with case-insensitive matching
-            messages = Message.query.filter(
-                or_(
-                    Message.content.ilike(f'%{keyword}%'),
-                    Thread.content.ilike(f'%{keyword}%')
-                )
-            ).join(Message.threads, isouter=True).order_by(Message.timestamp.desc()).limit(50).all()
+            # Get filters
+            user_filter = data.get('username', '').strip()
+            channel_filter = data.get('channel_id')
+            date_from = data.get('date_from')
+            date_to = data.get('date_to')
+            include_threads = data.get('include_threads', False)
+
+            # Build base query
+            query = Message.query
+
+            # Apply filters
+            if user_filter:
+                query = query.join(User).filter(User.username.ilike(f'%{user_filter}%'))
+
+            if channel_filter:
+                query = query.filter(Message.channel_id == channel_filter)
+
+            if date_from:
+                query = query.filter(Message.timestamp >= date_from)
+
+            if date_to:
+                query = query.filter(Message.timestamp <= date_to)
+
+            # Search in messages and optionally in threads
+            if include_threads:
+                query = query.filter(
+                    or_(
+                        Message.content.ilike(f'%{keyword}%'),
+                        Thread.content.ilike(f'%{keyword}%')
+                    )
+                ).join(Message.threads, isouter=True)
+            else:
+                query = query.filter(Message.content.ilike(f'%{keyword}%'))
+
+            messages = query.order_by(Message.timestamp.desc()).limit(50).all()
 
             logging.info(f"Found {len(messages)} messages matching the search")
 

@@ -71,6 +71,41 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Advanced Search Filters -->
+                    <div class="search-filters mb-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">User</label>
+                                <input type="text" class="form-control" id="searchUserFilter" placeholder="Filter by username">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Channel</label>
+                                <select class="form-select" id="searchChannelFilter">
+                                    <option value="">All Channels</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date From</label>
+                                <input type="date" class="form-control" id="searchDateFrom">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date To</label>
+                                <input type="date" class="form-control" id="searchDateTo">
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeThreads">
+                                    <label class="form-check-label" for="includeThreads">
+                                        Include thread replies
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button class="btn btn-primary" id="applyFilters">Apply Filters</button>
+                                <button class="btn btn-outline-secondary" id="clearFilters">Clear Filters</button>
+                            </div>
+                        </div>
+                    </div>
                     <div id="searchResults" class="search-results">
                         <!-- Search results will be populated here -->
                     </div>

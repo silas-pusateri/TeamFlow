@@ -484,11 +484,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('searchBtn');
     const searchResultsModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
     const searchResults = document.getElementById('searchResults');
+    const applyFilters = document.getElementById('applyFilters');
+    const clearFilters = document.getElementById('clearFilters');
+    const searchUserFilter = document.getElementById('searchUserFilter');
+    const searchChannelFilter = document.getElementById('searchChannelFilter');
+    const searchDateFrom = document.getElementById('searchDateFrom');
+    const searchDateTo = document.getElementById('searchDateTo');
+    const includeThreads = document.getElementById('includeThreads');
+
+    // Populate channel filter dropdown
+    socket.on('channel_list', (data) => {
+        const channelFilter = document.getElementById('searchChannelFilter');
+        if (channelFilter) {
+            channelFilter.innerHTML = '<option value="">All Channels</option>' +
+                data.channels.map(channel => 
+                    `<option value="${channel.id}">${channel.name}</option>`
+                ).join('');
+        }
+    });
 
     function performSearch() {
         const keyword = searchInput.value.trim();
         if (keyword) {
-            socket.emit('search_messages', { keyword });
+            const searchData = {
+                keyword: keyword,
+                username: searchUserFilter.value.trim(),
+                channel_id: searchChannelFilter.value,
+                date_from: searchDateFrom.value,
+                date_to: searchDateTo.value,
+                include_threads: includeThreads.checked
+            };
+            socket.emit('search_messages', searchData);
         }
     }
 
@@ -501,6 +527,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 performSearch();
             }
+        });
+    }
+
+    if (applyFilters) {
+        applyFilters.addEventListener('click', performSearch);
+    }
+
+    if (clearFilters) {
+        clearFilters.addEventListener('click', () => {
+            searchUserFilter.value = '';
+            searchChannelFilter.value = '';
+            searchDateFrom.value = '';
+            searchDateTo.value = '';
+            includeThreads.checked = false;
+            performSearch();
         });
     }
 
