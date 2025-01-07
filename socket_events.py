@@ -76,16 +76,20 @@ def create_message_data(message):
             'user': reaction.user.username if reaction.user else 'Unknown'
         } for reaction in message.reactions]
 
-        # Get thread messages with proper nesting
+        # Get thread messages
         threads = []
-        thread_messages = Thread.query.filter_by(message_id=message.id, replied_to_id=None)\
+        thread_messages = Thread.query.filter_by(message_id=message.id)\
             .order_by(Thread.timestamp)\
             .all()
 
         for thread in thread_messages:
-            thread_data = create_thread_data(thread)
-            if thread_data:
-                threads.append(thread_data)
+            thread_data = {
+                'id': thread.id,
+                'content': thread.content,
+                'user': thread.user.username if thread.user else 'Unknown',
+                'timestamp': thread.timestamp.isoformat()
+            }
+            threads.append(thread_data)
 
         # Get replies (nested messages)
         replies = []
@@ -114,43 +118,6 @@ def create_message_data(message):
         }
     except Exception as e:
         logging.error(f"Error creating message data for message {message.id}: {str(e)}")
-        return None
-
-def create_thread_data(thread):
-    """Helper function to create thread data with nested replies"""
-    try:
-        # Get the replied-to message content if it exists
-        replied_to_content = None
-        if thread.replied_to_id:
-            replied_to = Thread.query.get(thread.replied_to_id)
-            if replied_to:
-                replied_to_content = replied_to.content[:100]  # Get first 100 chars
-
-        thread_data = {
-            'id': thread.id,
-            'content': thread.content,
-            'user': thread.user.username if thread.user else 'Unknown',
-            'timestamp': thread.timestamp.isoformat(),
-            'depth': thread.thread_depth,
-            'replied_to_id': thread.replied_to_id,
-            'replied_to_content': replied_to_content,  # Add content of replied-to message
-            'reactions': [{
-                'emoji': reaction.emoji,
-                'user_id': reaction.user_id,
-                'user': reaction.user.username if reaction.user else 'Unknown'
-            } for reaction in thread.message.reactions],
-            'replies': []
-        }
-
-        # Recursively add nested replies
-        for reply in thread.replies:
-            reply_data = create_thread_data(reply)
-            if reply_data:
-                thread_data['replies'].append(reply_data)
-
-        return thread_data
-    except Exception as e:
-        logging.error(f"Error creating thread data for thread {thread.id}: {str(e)}")
         return None
 
 @socketio.on('message')
@@ -242,73 +209,36 @@ def handle_reaction(data):
 def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
-            parent_id = data['parent_id']  # This is always the top-level message ID
-            replied_to_id = data.get('replied_to_id')  # ID of immediate message being replied to
+            parent_id = data['parent_id']
+            replied_to_id = data.get('replied_to_id')
+            is_thread_reply = data.get('is_thread_reply', False)
             
-            # Create the thread reply
+            # Always use top-level message as parent
             thread = Thread(
-                message_id=parent_id,  # Always the top-level message
+                message_id=parent_id,
                 content=data['content'],
                 user_id=current_user.id,
-                replied_to_id=replied_to_id  # Store immediate reply context
+                replied_to_id=replied_to_id if is_thread_reply else None
             )
             db.session.add(thread)
             db.session.commit()
 
             # Get parent message for channel info
             parent_message = Message.query.get(parent_id)
-            if not parent_message:
-                raise ValueError(f"Parent message {parent_id} not found")
             
-            # Get the username of the message being replied to
-            replied_to_username = None
-            if replied_to_id:
-                replied_to_thread = Thread.query.get(replied_to_id)
-                if replied_to_thread:
-                    replied_to_username = replied_to_thread.user.username
-
-            # Create thread data with proper nesting
-            thread_data = create_thread_data(thread)
-            if thread_data:
-                thread_data.update({
-                    'channel_id': parent_message.channel_id,
-                    'message_id': parent_id,  # Add top-level message ID
-                    'replied_to_username': replied_to_username,  # Add username for UI context
-                    'parent_message_content': parent_message.content[:100]  # Add snippet of parent message
-                })
-                emit('thread_message', thread_data, room=thread_data['channel_id'])
+            # Broadcast thread message
+            thread_data = {
+                'id': thread.id,
+                'content': thread.content,
+                'user': current_user.username,
+                'parent_id': parent_id,
+                'timestamp': thread.timestamp.isoformat(),
+                'channel_id': parent_message.channel_id if parent_message else data['channel_id']
+            }
+            emit('thread_message', thread_data, room=thread_data['channel_id'])
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")
-            db.session.rollback()
-
-@socketio.on('fetch_thread_history')
-def handle_fetch_thread_history(data):
-    """Fetch the complete thread history for a message"""
-    if current_user.is_authenticated:
-        try:
-            message_id = data['message_id']
-            message = Message.query.get(message_id)
-            if not message:
-                return
-
-            # Get all thread messages for this top-level message
-            threads = Thread.query.filter_by(message_id=message_id)\
-                .order_by(Thread.timestamp)\
-                .all()
-
-            thread_data = []
-            for thread in threads:
-                data = create_thread_data(thread)
-                if data:
-                    thread_data.append(data)
-
-            emit('thread_history', {
-                'message_id': message_id,
-                'threads': thread_data
-            })
-        except Exception as e:
-            logging.error(f"Error fetching thread history: {str(e)}")
             db.session.rollback()
 
 @socketio.on('disconnect')

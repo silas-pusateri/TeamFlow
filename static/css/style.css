@@ -233,7 +233,7 @@ body {
     display: block;
 }
 
-/* Thread message styles */
+/* Add nested thread styling */
 .thread-message {
     position: relative;
     padding: 0.75rem;
@@ -248,32 +248,251 @@ body {
     margin-bottom: 0;
 }
 
-/* Reply indicator */
-.reply-indicator {
-    font-size: 0.85rem;
-    color: var(--text-color);
-    opacity: 0.7;
-    margin-bottom: 0.5rem;
+/* Add indentation for nested replies */
+.thread-message .thread-container {
+    margin-left: 1.5rem;
+    border-left-color: var(--accent-color);
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.thread-message .thread-message {
+    background-color: var(--bg-color);
+    border-color: var(--accent-color);
+}
+
+/* Reactions */
+.reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+
+.reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     padding: 0.25rem 0.5rem;
     background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.reaction:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.reaction.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.reaction-count {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.dark-theme .thread-container {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.dark-theme .message:hover,
+.dark-theme .thread-message:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.input-container {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    background-color: var(--bg-color);
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#message-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: none;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 44px;
+    max-height: 120px;
+}
+
+.send-button {
+    padding: 10px;
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 44px;
+    height: 44px;
+}
+
+.send-button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.send-button i {
+    font-size: 1.2rem;
+}
+
+.search-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    position: relative;
+    min-width: 300px;
+}
+
+.search-container input {
+    background-color: var(--mint-green);
+    border: 1px solid var(--accent-color);
+    color: var(--text-color);
+    border-radius: 20px;
+    padding: 8px 36px 8px 16px;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: var(--bg-color);
+}
+
+#searchBtn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#searchBtn:hover {
+    color: var(--secondary-color);
+}
+
+#searchBtn i {
+    font-size: 1.2rem;
+}
+
+.emoji-picker {
+    position: fixed;
+    display: none;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 320px;
+    width: auto;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.emoji-option {
+    cursor: pointer;
+    padding: 6px;
     border-radius: 4px;
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
 }
 
-.replied-content {
-    font-style: italic;
-    opacity: 0.8;
-    display: inline-block;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
+.emoji-option:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
 }
 
-/* Reply context styles */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dark theme support for emoji picker */
+.dark-theme .emoji-picker {
+    background: var(--bg-color);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .emoji-option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pinned-messages {
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.pinned-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.pinned-message i {
+    color: var(--primary-color);
+}
+
+.no-messages-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    margin-top: 2rem;
+    text-align: center;
+    color: #666;
+    font-size: 1.1rem;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.no-messages-placeholder p {
+    margin: 0;
+    line-height: 1.5;
+}
+
 .reply-context {
     display: none;
     align-items: center;
@@ -284,41 +503,22 @@ body {
     padding: 8px 12px;
     margin-bottom: 8px;
     font-size: 0.9rem;
-    animation: slideDown 0.2s ease-out;
 }
 
 .reply-info {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    flex: 1;
-    min-width: 0;  /* Enable text truncation */
 }
 
 .reply-label {
     font-weight: bold;
     color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.nested-reply-indicator {
-    font-size: 0.8rem;
-    background-color: var(--accent-color);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 10px;
 }
 
 .reply-preview {
     color: var(--text-color);
     opacity: 0.7;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-left: 8px;
-    border-left: 2px solid var(--border-color);
 }
 
 .cancel-reply-btn {
@@ -330,65 +530,10 @@ body {
     padding: 0 4px;
     opacity: 0.6;
     transition: opacity 0.2s;
-    margin-left: 8px;
-    flex-shrink: 0;
 }
 
 .cancel-reply-btn:hover {
     opacity: 1;
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-10px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* Dark theme support */
-.dark-theme .reply-indicator {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark-theme .nested-reply-indicator {
-    background-color: var(--secondary-color);
-}
-
-.dark-theme .reply-preview {
-    border-left-color: var(--accent-color);
-}
-
-/* Thread replies container */
-.thread-replies {
-    margin-top: 0.75rem;
-    margin-left: 1rem;
-    border-left: 2px solid var(--accent-color);
-    padding-left: 1rem;
-}
-
-/* Nested reply styles */
-.thread-message .thread-message {
-    background-color: var(--bg-color);
-    border-color: var(--accent-color);
-    margin-left: 0;  /* Remove default margin since we're using dynamic indentation */
-}
-
-/* Dark theme support */
-.dark-theme .thread-container {
-    background-color: rgba(255, 255, 255, 0.02);
-}
-
-.dark-theme .reply-indicator {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark-theme .thread-message .thread-message {
-    background-color: var(--bg-color);
-    border-color: var(--accent-color);
 }
 
 .status-dot {

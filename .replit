@@ -1,11 +1,11 @@
-modules = ["nodejs-20", "python-3.11", "web", "nix"]
+modules = ["python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = "python main.py"
+run = ["sh", "-c", "python main.py"]
 
 [workflows]
 runButton = "Project"
