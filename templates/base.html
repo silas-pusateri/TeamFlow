@@ -21,22 +21,22 @@
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
+                        <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#statusModal">
+                            <span class="status-dot {{ 'online' if current_user.is_online else 'offline' }}"></span>
+                            {{ current_user.custom_status or 'Set status' }}
+                        </button>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item me-2">
                         <div class="nav-link search-container">
                             <input type="text" id="searchInput" class="form-control" placeholder="Search messages...">
                             <button id="searchBtn" class="btn btn-outline-light">
                                 Find
                             </button>
                         </div>
-                    </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav ms-auto">
-                    {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#statusModal">
-                            <span class="status-dot {{ 'online' if current_user.is_online else 'offline' }}"></span>
-                            {{ current_user.custom_status or 'Set status' }}
-                        </button>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
