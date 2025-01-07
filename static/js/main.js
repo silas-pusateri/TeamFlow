@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add click handler to existing send button
+    // Add click handler to send button
     const sendButton = document.querySelector('.send-button');
     if (sendButton) {
         sendButton.addEventListener('click', sendMessage);
@@ -130,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (replyingTo) {
                 messageData.parent_id = replyingTo.messageId;
-                messageData.channel_id = currentChannel;
                 socket.emit('thread_reply', messageData);
 
                 // Update thread container immediately
@@ -685,29 +684,28 @@ document.addEventListener('click', (e) => {
 });
 
 socket.on('search_results', (data) => {
-        if (searchResults) {
-            if (data.results.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="p-4 text-center">
-                        <p>No messages found matching your search.</p>
+    if (searchResults) {
+        if (data.results.length === 0) {
+            searchResults.innerHTML = `
+                <div class="p-4 text-center">
+                    <p>No messages found matching your search.</p>
+                </div>
+            `;
+        } else {
+            searchResults.innerHTML = data.results.map(result => `
+                <div class="search-result-item">
+                    <div class="search-result-header">
+                        <span class="search-result-channel"># ${result.channel}</span>
+                        <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
                     </div>
-                `;
-            } else {
-                searchResults.innerHTML = data.results.map(result => `
-                    <div class="search-result-item">
-                        <div class="search-result-header">
-                            <span class="search-result-channel"># ${result.channel}</span>
-                            <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div class="search-result-content">${result.content}</div>
-                        <div class="search-result-user">
-                            <span class="username" data-user-id="${result.user_id}">${result.user}</span>
-                        </div>
+                    <div class="search-result-content">${result.content}</div>
+                    <div class="search-result-user">
+                        <span class="username" data-user-id="${result.user_id}">${result.user}</span>
                     </div>
-                `).join('');
-            }
-            searchResultsModal.show();
+                </div>
+            `).join('');
         }
-    });
+        searchResultsModal.show();
+    }
 });
 });
