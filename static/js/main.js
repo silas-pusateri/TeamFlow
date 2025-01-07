@@ -130,9 +130,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (replyingTo) {
                 messageData.parent_id = replyingTo.messageId;
+                socket.emit('thread_reply', messageData);
+
+                // Update thread container immediately
+                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
+                if (parentMessage) {
+                    const threadContainer = parentMessage.querySelector('.thread-container');
+                    threadContainer.classList.add('active');
+                }
+            } else {
+                socket.emit('message', messageData);
             }
 
-            socket.emit(replyingTo ? 'thread_reply' : 'message', messageData);
             messageInput.value = '';
             cancelReply();
         }
@@ -186,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const replyContext = document.querySelector('.reply-context');
         const messageInput = document.getElementById('message-input');
         window.replyingTo = { messageId, username, content };
-        
+
         if (replyContext) {
             replyContext.style.display = 'flex';
             replyContext.innerHTML = `

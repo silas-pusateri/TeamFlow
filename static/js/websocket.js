@@ -150,16 +150,35 @@ function createThreadMessageHTML(thread) {
 socket.on('thread_message', (data) => {
     const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
     if (parentMessage) {
-        const threadContainer = parentMessage.querySelector('.thread-container');
+        let threadContainer = parentMessage.querySelector('.thread-container');
+        if (!threadContainer) {
+            threadContainer = document.createElement('div');
+            threadContainer.className = 'thread-container';
+            parentMessage.appendChild(threadContainer);
+        }
+        
         threadContainer.classList.add('active');
-
         const threadMessage = document.createElement('div');
         threadMessage.classList.add('thread-message');
         threadMessage.dataset.messageId = data.id;
+        threadMessage.dataset.parentId = data.parent_id;
         threadMessage.innerHTML = createThreadMessageHTML(data);
 
         threadContainer.appendChild(threadMessage);
         threadContainer.scrollTop = threadContainer.scrollHeight;
+
+        // Update thread count if it exists
+        const threadCount = parentMessage.querySelector('.thread-count');
+        if (threadCount) {
+            const currentCount = parseInt(threadCount.textContent) || 0;
+            threadCount.textContent = `${currentCount + 1} replies`;
+            threadCount.style.display = 'block';
+        } else {
+            const countDisplay = document.createElement('div');
+            countDisplay.className = 'thread-count';
+            countDisplay.textContent = '1 reply';
+            parentMessage.querySelector('.message-content').appendChild(countDisplay);
+        }
     }
 });
 
