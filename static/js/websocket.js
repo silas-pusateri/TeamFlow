@@ -58,6 +58,7 @@ socket.on('message', (data) => {
 });
 
 function createMessageHTML(data, reactionGroups) {
+    const hasThreads = data.threads && data.threads.length > 0;
     return `
         <div class="message-header">
             <span class="username">${data.user}</span>
@@ -71,7 +72,10 @@ function createMessageHTML(data, reactionGroups) {
                 </div>
             </div>
         </div>
-        <div class="message-content">${data.content}</div>
+        <div class="message-content">
+            ${data.content}
+            ${hasThreads ? `<div class="thread-count">${data.threads.length} ${data.threads.length === 1 ? 'reply' : 'replies'}</div>` : ''}
+        </div>
         <div class="message-hover-actions">
             <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
                 <i class="feather-smile"></i>
@@ -93,8 +97,8 @@ function createMessageHTML(data, reactionGroups) {
                 </span>
             `).join('')}
         </div>
-        <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}" data-parent-id="${data.id}">
-            ${(data.threads || []).map(thread => createThreadMessageHTML(thread)).join('')}
+        <div class="thread-container ${hasThreads ? 'active' : ''}" data-parent-id="${data.id}">
+            ${hasThreads ? data.threads.map(thread => createThreadMessageHTML(thread)).join('') : ''}
         </div>
     `;
 }
@@ -165,7 +169,10 @@ function createThreadMessageHTML(thread) {
 socket.on('thread_message', (data) => {
     // Find the parent message using the parent_id from the data
     const parentMessage = document.querySelector(`.message[data-message-id="${data.parent_id}"]`);
-    if (!parentMessage) return;
+    if (!parentMessage) {
+        console.error('Parent message not found:', data.parent_id);
+        return;
+    }
 
     // Find or create thread container
     let threadContainer = parentMessage.querySelector('.thread-container');
@@ -193,7 +200,14 @@ socket.on('thread_message', (data) => {
     threadContainer.scrollTop = threadContainer.scrollHeight;
 
     // Update thread count in the parent message
-    updateThreadCount(parentMessage);
+    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
+    const countDisplay = parentMessage.querySelector('.thread-count') || document.createElement('div');
+    countDisplay.className = 'thread-count';
+    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
+
+    if (!parentMessage.querySelector('.thread-count')) {
+        parentMessage.querySelector('.message-content').appendChild(countDisplay);
+    }
 });
 
 socket.on('reaction_added', (data) => {
