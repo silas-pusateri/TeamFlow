@@ -99,6 +99,21 @@ function createMessageHTML(data, reactionGroups) {
     `;
 }
 
+function updateThreadCount(parentMessage) {
+    const threadContainer = parentMessage.querySelector('.thread-container');
+    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
+    
+    let countDisplay = parentMessage.querySelector('.thread-count');
+    if (!countDisplay) {
+        countDisplay = document.createElement('div');
+        countDisplay.className = 'thread-count';
+        parentMessage.querySelector('.message-content').appendChild(countDisplay);
+    }
+    
+    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
+    countDisplay.style.display = 'block';
+}
+
 function createThreadMessageHTML(thread) {
     const threadReactions = thread.reactions || [];
     const reactionGroups = {};
@@ -162,10 +177,16 @@ socket.on('thread_message', (data) => {
         threadMessage.classList.add('thread-message');
         threadMessage.dataset.messageId = data.id;
         threadMessage.dataset.parentId = data.parent_id;
+        
+        // Parse message content for channel references
+        data.content = parseChannelReferences(data.content);
         threadMessage.innerHTML = createThreadMessageHTML(data);
 
         threadContainer.appendChild(threadMessage);
         threadContainer.scrollTop = threadContainer.scrollHeight;
+        
+        // Update thread count
+        updateThreadCount(parentMessage);
 
         // Update thread count if it exists
         const threadCount = parentMessage.querySelector('.thread-count');

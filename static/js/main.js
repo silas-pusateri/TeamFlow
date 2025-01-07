@@ -130,12 +130,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (replyingTo) {
                 messageData.parent_id = replyingTo.messageId;
+                messageData.channel_id = currentChannel;
                 socket.emit('thread_reply', messageData);
 
                 // Update thread container immediately
                 const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
                 if (parentMessage) {
-                    const threadContainer = parentMessage.querySelector('.thread-container');
+                    let threadContainer = parentMessage.querySelector('.thread-container');
+                    if (!threadContainer) {
+                        threadContainer = document.createElement('div');
+                        threadContainer.className = 'thread-container';
+                        parentMessage.appendChild(threadContainer);
+                    }
                     threadContainer.classList.add('active');
                 }
             } else {
