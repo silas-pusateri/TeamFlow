@@ -209,15 +209,9 @@ def handle_reaction(data):
 def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
-            # Get the original parent message if replying to a thread
-            parent_id = data['parent_id']
-            original_thread = Thread.query.get(parent_id)
-            if original_thread:
-                parent_id = original_thread.message_id
-
             # Create and save thread message
             thread = Thread(
-                message_id=parent_id,
+                message_id=data['parent_id'],
                 content=data['content'],
                 user_id=current_user.id
             )
@@ -229,7 +223,7 @@ def handle_thread_reply(data):
                 'id': thread.id,
                 'content': thread.content,
                 'user': current_user.username,
-                'parent_id': parent_id,
+                'parent_id': data['parent_id'],
                 'timestamp': thread.timestamp.isoformat()
             }
             emit('thread_message', thread_data, room=data['channel_id'])

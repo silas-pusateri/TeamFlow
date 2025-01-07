@@ -173,24 +173,13 @@ body {
 .message-hover-actions {
     display: none;
     gap: 0.5rem;
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: var(--bg-color);
-    padding: 0.25rem;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
 }
 
 .message:hover .message-hover-actions,
 .thread-message:hover .message-hover-actions {
     display: flex;
-}
-
-.message, .thread-message {
-    position: relative;
 }
 
 .hover-action-btn {
@@ -238,25 +227,6 @@ body {
     border-radius: 6px;
     border: 1px solid var(--border-color);
     transition: all 0.2s ease;
-}
-
-.thread-message .message-menu-btn {
-    position: absolute;
-    right: 0.5rem;
-    top: 0.5rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.thread-message:hover .message-menu-btn {
-    opacity: 1;
-}
-
-.thread-message .message-menu {
-    position: absolute;
-    right: 0.5rem;
-    top: 2rem;
-    z-index: 100;
 }
 
 .thread-message:last-child {
@@ -965,14 +935,4 @@ body {
 
 .delete-option:hover {
     background-color: rgba(220, 53, 69, 0.1) !important;
-}
-.channel-reference {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.channel-reference:hover {
-    text-decoration: underline;
-    opacity: 0.8;
 }

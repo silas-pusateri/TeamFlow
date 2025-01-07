@@ -1,100 +1,3 @@
-// Global variables
-let currentChannel = null;
-let messageContainer = null;
-
-// Global switchChannel function
-function switchChannel(channelId) {
-    if (!messageContainer) {
-        messageContainer = document.getElementById('message-container');
-    }
-    
-    if (currentChannel) {
-        socket.emit('leave', { channel: currentChannel });
-    }
-
-    // Clear messages before joining new channel
-    messageContainer.innerHTML = `
-        <div class="no-messages-placeholder">
-            <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
-        </div>
-    `;
-
-    currentChannel = channelId;
-    socket.emit('join', { channel: channelId });
-    socket.emit('get_channel_info', { channel_id: channelId });
-
-    // Reset reply state when switching channels
-    if (typeof cancelReply === 'function') {
-        cancelReply();
-    }
-
-    // Highlight selected channel
-    document.querySelectorAll('.channel-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.channelId === channelId) {
-            item.classList.add('active');
-        }
-    });
-    
-    // Scroll to top of message container
-    messageContainer.scrollTop = 0;
-}
-
-// Global sendMessage function
-window.sendMessage = function() {
-    const messageInput = document.getElementById('message-input');
-    if (!messageInput) return;
-    
-    const content = messageInput.value.trim();
-    if (content && currentChannel) {
-        const messageData = {
-            content: content,
-            channel_id: currentChannel
-        };
-
-        if (window.replyingTo) {
-            messageData.parent_id = window.replyingTo.messageId;
-            socket.emit('thread_reply', messageData);
-        } else {
-            socket.emit('message', messageData);
-        }
-        
-        messageInput.value = '';
-        if (typeof window.cancelReply === 'function') {
-            window.cancelReply();
-        }
-    }
-};
-
-// Add setReplyContext to global scope
-window.setReplyContext = function(messageId, username, content) {
-    const threadMessage = document.querySelector(`.thread-message[data-message-id="${messageId}"]`);
-    if (threadMessage) {
-        // If replying to a thread message, get the parent message's ID
-        const parentMessage = threadMessage.closest('.message');
-        if (parentMessage) {
-            messageId = parentMessage.dataset.messageId;
-        }
-    }
-    
-    window.replyingTo = { messageId, username, content };
-    const replyContext = document.querySelector('.reply-context');
-    if (replyContext) {
-        replyContext.style.display = 'flex';
-        replyContext.innerHTML = `
-            <div class="reply-info">
-                <span class="reply-label">Replying to ${username}</span>
-                <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
-            </div>
-            <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
-        `;
-        document.getElementById('message-input').focus();
-    }
-};
-
-// Make switchChannel globally accessible
-window.switchChannel = switchChannel;
-
 document.addEventListener('DOMContentLoaded', function() {
     const messageContainer = document.getElementById('message-container');
     const messageInput = document.getElementById('message-input');
@@ -168,11 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            window.sendMessage();
+            sendMessage();
         }
     });
 
     // Add click handler to existing send button
+    const sendButton = document.querySelector('.send-button');
+    if (sendButton) {
+        sendButton.addEventListener('click', sendMessage);
+    }
+
     // Select first channel by default
     const firstChannel = channelList.querySelector('.channel-item');
     if (firstChannel) {
@@ -180,13 +88,51 @@ document.addEventListener('DOMContentLoaded', function() {
         switchChannel(channelId);
     }
 
-    // Add send button click handler
-    const sendButton = document.querySelector('.send-button');
-    if (sendButton) {
-        sendButton.addEventListener('click', () => window.sendMessage());
+    function sendMessage() {
+        const content = messageInput.value.trim();
+        if (content && currentChannel) {
+            const messageData = {
+                content: content,
+                channel_id: currentChannel
+            };
+
+            if (replyingTo) {
+                messageData.parent_id = replyingTo.messageId;
+            }
+
+            socket.emit(replyingTo ? 'thread_reply' : 'message', messageData);
+            messageInput.value = '';
+            cancelReply();
+        }
     }
 
-    // Remove window.switchChannel from here as it's now defined globally
+    function switchChannel(channelId) {
+        if (currentChannel) {
+            socket.emit('leave', { channel: currentChannel });
+        }
+
+        // Clear messages before joining new channel
+        messageContainer.innerHTML = `
+            <div class="no-messages-placeholder">
+                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+            </div>
+        `;
+
+        currentChannel = channelId;
+        socket.emit('join', { channel: channelId });
+        socket.emit('get_channel_info', { channel_id: channelId });
+
+        // Reset reply state when switching channels
+        cancelReply();
+
+        // Highlight selected channel
+        document.querySelectorAll('.channel-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.channelId === channelId) {
+                item.classList.add('active');
+            }
+        });
+    }
 
     // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {

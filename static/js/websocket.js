@@ -70,7 +70,7 @@ function createMessageHTML(data, reactionGroups) {
                 </div>
             </div>
         </div>
-        <div class="message-content">${parseChannelReferences(data.content)}</div>
+        <div class="message-content">${data.content}</div>
         <div class="message-hover-actions">
             <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
                 <i class="feather-smile"></i>
@@ -115,39 +115,33 @@ function createThreadMessageHTML(thread) {
     });
 
     return `
-        <div class="message-header">
-            <span class="username">${thread.user}</span>
-            <div class="message-actions">
+        <div class="thread-message" data-message-id="${thread.id}">
+            <div class="message-header">
+                <span class="username">${thread.user}</span>
                 <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
-                <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${thread.id}')">⋮</button>
-                <div id="menu-${thread.id}" class="message-menu">
-                    <div class="menu-item" onclick="copyMessageContent('${thread.id}')">Copy message</div>
-                    <div class="menu-item" onclick="copyMessageLink('${thread.id}')">Copy link</div>
-                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${thread.id}')">Delete message</div>
-                </div>
             </div>
-        </div>
-        <div class="message-content">${thread.content}</div>
-        <div class="message-hover-actions">
-            <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
-                <i class="feather-smile"></i>
-                React
-            </button>
-            <button class="hover-action-btn reply-btn" title="Reply in thread">
-                <i class="feather-message-square"></i>
-                Reply
-            </button>
-        </div>
-        <div class="reactions" data-message-id="${thread.id}">
-            ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
-                <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
-                      data-emoji="${emoji}"
-                      data-message-id="${thread.id}"
-                      title="${usernames.join(', ')}">
-                    ${emoji}
-                    <span class="reaction-count">${count}</span>
-                </span>
-            `).join('')}
+            <div class="message-content">${thread.content}</div>
+            <div class="message-hover-actions">
+                <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
+                    <i class="feather-smile"></i>
+                    React
+                </button>
+                <button class="hover-action-btn reply-btn" title="Reply in thread">
+                    <i class="feather-message-square"></i>
+                    Reply
+                </button>
+            </div>
+            <div class="reactions" data-message-id="${thread.id}">
+                ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
+                    <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
+                          data-emoji="${emoji}"
+                          data-message-id="${thread.id}"
+                          title="${usernames.join(', ')}">
+                        ${emoji}
+                        <span class="reaction-count">${count}</span>
+                    </span>
+                `).join('')}
+            </div>
         </div>
     `;
 }
@@ -155,19 +149,8 @@ function createThreadMessageHTML(thread) {
 socket.on('thread_message', (data) => {
     const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
     if (parentMessage) {
-        let threadContainer = parentMessage.querySelector('.thread-container');
-        if (!threadContainer) {
-            threadContainer = document.createElement('div');
-            threadContainer.classList.add('thread-container');
-            parentMessage.appendChild(threadContainer);
-        }
+        const threadContainer = parentMessage.querySelector('.thread-container');
         threadContainer.classList.add('active');
-
-        // Check if message already exists in thread
-        const existingMessage = threadContainer.querySelector(`[data-message-id="${data.id}"]`);
-        if (existingMessage) {
-            return;
-        }
 
         const threadMessage = document.createElement('div');
         threadMessage.classList.add('thread-message');
@@ -318,23 +301,5 @@ socket.on('channel_info', (data) => {
         header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
-    }
-});
-function parseChannelReferences(content) {
-    // Replace #channelname with clickable links
-    return content.replace(/#(\w+)/g, '<a href="#" class="channel-reference" data-channel="$1">#$1</a>');
-}
-
-// Add channel reference click handler
-document.addEventListener('click', (e) => {
-    const channelRef = e.target.closest('.channel-reference');
-    if (channelRef) {
-        e.preventDefault();
-        const channelName = channelRef.dataset.channel;
-        const channelElement = document.querySelector(`.channel-item[data-channel-name="${channelName}"]`);
-        if (channelElement) {
-            const channelId = channelElement.dataset.channelId;
-            window.switchChannel(channelId);
-        }
     }
 });
