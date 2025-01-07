@@ -181,11 +181,13 @@ socket.on('thread_message', (data) => {
         threadContainer.className = 'thread-container active';
         threadContainer.dataset.parentId = data.parent_id;
         parentMessage.appendChild(threadContainer);
-    } else {
-        threadContainer.classList.add('active');
     }
+    
+    // Always show the thread container when a new reply is added
+    threadContainer.classList.add('active');
+    threadContainer.style.display = 'block';
 
-    // Create thread message element and maintain hierarchy
+    // Create thread message element
     const threadMessage = document.createElement('div');
     threadMessage.classList.add('thread-message');
     threadMessage.dataset.messageId = data.id;
@@ -200,16 +202,27 @@ socket.on('thread_message', (data) => {
     threadContainer.appendChild(threadMessage);
     threadContainer.scrollTop = threadContainer.scrollHeight;
 
-    // Update thread count in the parent message
-    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
-    const countDisplay = parentMessage.querySelector('.thread-count') || document.createElement('div');
-    countDisplay.className = 'thread-count';
-    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
-
-    if (!parentMessage.querySelector('.thread-count')) {
-        parentMessage.querySelector('.message-content').appendChild(countDisplay);
-    }
+    // Update thread count and ensure it's visible
+    updateThreadCount(parentMessage);
 });
+
+function updateThreadCount(parentMessage) {
+    const threadContainer = parentMessage.querySelector('.thread-container');
+    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
+    let countDisplay = parentMessage.querySelector('.thread-count');
+    
+    if (!countDisplay) {
+        countDisplay = document.createElement('div');
+        countDisplay.className = 'thread-count';
+        const messageContent = parentMessage.querySelector('.message-content');
+        if (messageContent) {
+            messageContent.appendChild(countDisplay);
+        }
+    }
+    
+    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
+    countDisplay.style.display = 'block';
+}
 
 socket.on('reaction_added', (data) => {
     const selector = data.is_thread ? '.thread-message' : '.message';
