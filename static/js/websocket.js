@@ -373,7 +373,6 @@ socket.on('channel_info', (data) => {
         header.querySelector('.channel-description').textContent = data.description;
         header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
-        header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
 });
 

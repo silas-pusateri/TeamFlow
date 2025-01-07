@@ -77,6 +77,15 @@ window.switchChannel = function(channelId) {
     if (window.currentChannel) {
         socket.emit('leave', { channel: window.currentChannel });
     }
+    
+    // Show delete button when channel is selected
+    const deleteBtn = document.getElementById('deleteChannelBtn');
+    deleteBtn.style.display = 'block';
+    deleteBtn.onclick = () => {
+        if (confirm('Are you sure you want to delete this channel? This action cannot be undone.')) {
+            socket.emit('delete_channel', { channel_id: channelId });
+        }
+    };
 
     const messageContainer = document.getElementById('message-container');
     messageContainer.innerHTML = `

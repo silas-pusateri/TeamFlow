@@ -11,7 +11,10 @@
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h6 class="channels-header mb-0">Channels</h6>
-            <button class="btn btn-sm btn-outline-primary p-1" data-bs-toggle="modal" data-bs-target="#newChannelModal">+</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-danger p-1" id="deleteChannelBtn" style="display: none;">Delete Channel</button>
+                <button class="btn btn-sm btn-outline-primary p-1" data-bs-toggle="modal" data-bs-target="#newChannelModal">+</button>
+            </div>
         </div>
         <ul class="channel-list" id="channel-list">
             {% for channel in channels %}
@@ -31,8 +34,7 @@
             <div class="channel-metrics">
                 <span class="channel-owner"></span>
                 <span class="message-count"></span>
-                <span class="reply-count"></span>
-            </div>
+                </div>
         </div>
         <div class="message-container" id="message-container">
             <!-- Messages will be populated by JavaScript -->

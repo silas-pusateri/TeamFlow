@@ -256,6 +256,25 @@ def handle_disconnect():
             logging.error(f"Error in handle_disconnect: {str(e)}")
             db.session.rollback()
 
+@socketio.on('delete_channel')
+def handle_delete_channel(data):
+    if current_user.is_authenticated:
+        try:
+            channel_id = data['channel_id']
+            channel = Channel.query.get(channel_id)
+            
+            if channel and (channel.created_by_id == current_user.id or current_user.is_admin):
+                # Delete all messages in the channel first
+                Message.query.filter_by(channel_id=channel_id).delete()
+                db.session.delete(channel)
+                db.session.commit()
+                
+                emit('channel_deleted', {'channel_id': channel_id}, broadcast=True)
+                
+        except Exception as e:
+            logging.error(f"Error in handle_delete_channel: {str(e)}")
+            db.session.rollback()
+
 @socketio.on('create_channel')
 def handle_create_channel(data):
     if current_user.is_authenticated:
