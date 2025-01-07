@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
         channelList.appendChild(channelItem);
     });
 
-
     // Channel selection
     channelList.addEventListener('click', (e) => {
         if (e.target.classList.contains('channel-item')) {
@@ -134,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Message actions (Pin, Bookmark, Reaction)
+    // Message actions (Reaction)
     messageContainer.addEventListener('click', (e) => {
         const messageElement = e.target.closest('.message');
         if (!messageElement) return;
@@ -177,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(emojiPicker);
 
     const commonEmojis = ['👍', '❤️', '😊', '🎉', '👏', '🚀', '👌', '🔥', '✨', '😄', '🤔', '👀',
-                         '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
+                       '😂', '🙌', '💯', '🎨', '💪', '🌟', '💡', '🎵', '🎮', '🍕', '☕', '🌈'];
 
     function showEmojiPicker(messageId, buttonRect) {
         emojiPicker.innerHTML = commonEmojis.map(emoji =>

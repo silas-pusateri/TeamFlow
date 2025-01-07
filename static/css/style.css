@@ -224,6 +224,19 @@ body {
     font-weight: 500;
 }
 
+/* Dark theme support for reactions */
+.dark-theme .reaction {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .reaction:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme .reaction.active {
+    background-color: var(--primary-color);
+}
+
 .dark-theme .thread-container {
     background-color: rgba(255, 255, 255, 0.02);
 }

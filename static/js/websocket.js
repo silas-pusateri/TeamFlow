@@ -65,16 +65,6 @@ function createMessageHTML(data, reactionGroups) {
             <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
         </div>
         <div class="message-content">${data.content}</div>
-        <div class="message-hover-actions">
-            <button class="hover-action-btn reaction-btn" title="Add reaction">
-                <i class="feather-smile"></i>
-                React
-            </button>
-            <button class="hover-action-btn reply-btn" title="Reply to message">
-                <i class="feather-message-square"></i>
-                Reply
-            </button>
-        </div>
         <div class="reactions">
             ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
                 <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
@@ -84,6 +74,16 @@ function createMessageHTML(data, reactionGroups) {
                     <span class="reaction-count">${count}</span>
                 </span>
             `).join('')}
+        </div>
+        <div class="message-hover-actions">
+            <button class="hover-action-btn reaction-btn" title="Add reaction">
+                <i class="feather-smile"></i>
+                React
+            </button>
+            <button class="hover-action-btn reply-btn" title="Reply to message">
+                <i class="feather-message-square"></i>
+                Reply
+            </button>
         </div>
         <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}">
             ${(data.threads || []).map(thread => createThreadMessageHTML(thread)).join('')}
@@ -113,22 +113,6 @@ function createThreadMessageHTML(thread) {
         </div>
     `;
 }
-
-socket.on('thread_message', (data) => {
-    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
-    if (parentMessage) {
-        const threadContainer = parentMessage.querySelector('.thread-container');
-        threadContainer.classList.add('active');
-
-        const threadMessage = document.createElement('div');
-        threadMessage.classList.add('thread-message');
-        threadMessage.dataset.messageId = data.id;
-        threadMessage.innerHTML = createThreadMessageHTML(data);
-
-        threadContainer.appendChild(threadMessage);
-        threadContainer.scrollTop = threadContainer.scrollHeight;
-    }
-});
 
 socket.on('reaction_added', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
@@ -204,8 +188,40 @@ document.addEventListener('click', (e) => {
     }
 });
 
+socket.on('thread_message', (data) => {
+    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
+    if (parentMessage) {
+        const threadContainer = parentMessage.querySelector('.thread-container');
+        threadContainer.classList.add('active');
+
+        const threadMessage = document.createElement('div');
+        threadMessage.classList.add('thread-message');
+        threadMessage.dataset.messageId = data.id;
+        threadMessage.innerHTML = createThreadMessageHTML(data);
+
+        threadContainer.appendChild(threadMessage);
+        threadContainer.scrollTop = threadContainer.scrollHeight;
+    }
+});
+
 socket.on('status_change', (data) => {
     updateUserStatus(data);
+});
+
+function updateUserStatus(data) {
+    const userElement = document.querySelector(`[data-user-id="${data.user_id}"]`);
+    if (userElement) {
+        const statusDot = userElement.querySelector('.status-dot');
+        statusDot.classList.remove('online', 'offline');
+        statusDot.classList.add(data.status);
+    }
+}
+
+// Add currentUserId to window scope for reaction handling
+window.currentUserId = null;
+socket.on('current_user', (data) => {
+    window.currentUserId = data.user_id;
+    currentUserId = data.user_id;
 });
 
 socket.on('message_pinned', (data) => {
@@ -225,19 +241,4 @@ socket.on('message_bookmarked', (data) => {
         const bookmarkButton = message.querySelector('.bookmark-btn');
         bookmarkButton.classList.toggle('active', data.is_bookmarked);
     }
-});
-
-function updateUserStatus(data) {
-    const userElement = document.querySelector(`[data-user-id="${data.user_id}"]`);
-    if (userElement) {
-        const statusDot = userElement.querySelector('.status-dot');
-        statusDot.classList.remove('online', 'offline');
-        statusDot.classList.add(data.status);
-    }
-}
-
-// Add currentUserId to window scope for reaction handling
-window.currentUserId = null;
-socket.on('current_user', (data) => {
-    window.currentUserId = data.user_id;
 });
