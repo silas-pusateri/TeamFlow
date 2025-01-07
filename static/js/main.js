@@ -144,6 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         parentMessage.appendChild(threadContainer);
                     }
                     threadContainer.classList.add('active');
+                    // Update thread count
+                    updateThreadCount(parentMessage);
                 }
             } else {
                 socket.emit('message', messageData);
