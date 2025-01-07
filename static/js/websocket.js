@@ -149,7 +149,12 @@ function createThreadMessageHTML(thread) {
 socket.on('thread_message', (data) => {
     const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
     if (parentMessage) {
-        const threadContainer = parentMessage.querySelector('.thread-container');
+        let threadContainer = parentMessage.querySelector('.thread-container');
+        if (!threadContainer) {
+            threadContainer = document.createElement('div');
+            threadContainer.classList.add('thread-container');
+            parentMessage.appendChild(threadContainer);
+        }
         threadContainer.classList.add('active');
 
         const threadMessage = document.createElement('div');

@@ -54,13 +54,32 @@ window.sendMessage = function() {
 
         if (window.replyingTo) {
             messageData.parent_id = window.replyingTo.messageId;
+            socket.emit('thread_reply', messageData);
+        } else {
+            socket.emit('message', messageData);
         }
-
-        socket.emit(window.replyingTo ? 'thread_reply' : 'message', messageData);
+        
         messageInput.value = '';
         if (typeof window.cancelReply === 'function') {
             window.cancelReply();
         }
+    }
+};
+
+// Add setReplyContext to global scope
+window.setReplyContext = function(messageId, username, content) {
+    window.replyingTo = { messageId, username, content };
+    const replyContext = document.querySelector('.reply-context');
+    if (replyContext) {
+        replyContext.style.display = 'flex';
+        replyContext.innerHTML = `
+            <div class="reply-info">
+                <span class="reply-label">Replying to ${username}</span>
+                <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+            </div>
+            <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+        `;
+        document.getElementById('message-input').focus();
     }
 };
 
