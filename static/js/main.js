@@ -182,18 +182,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function setReplyContext(messageId, username, content) {
-        replyingTo = { messageId, username, content };
-        replyContext.style.display = 'flex';
-        replyContext.innerHTML = `
-            <div class="reply-info">
-                <span class="reply-label">Replying to ${username}</span>
-                <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
-            </div>
-            <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
-        `;
-        messageInput.focus();
-    }
+    window.setReplyContext = function(messageId, username, content) {
+        const replyContext = document.querySelector('.reply-context');
+        const messageInput = document.getElementById('message-input');
+        window.replyingTo = { messageId, username, content };
+        
+        if (replyContext) {
+            replyContext.style.display = 'flex';
+            replyContext.innerHTML = `
+                <div class="reply-info">
+                    <span class="reply-label">Replying to ${username}</span>
+                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+                </div>
+                <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+            `;
+            messageInput.focus();
+        }
+    };
 
     function cancelReply() {
         replyingTo = null;
