@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function switchChannel(channelId) {
+    window.switchChannel = function(channelId) {
         if (currentChannel) {
             socket.emit('leave', { channel: currentChannel });
         }
@@ -132,6 +132,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 item.classList.add('active');
             }
         });
+        
+        // Scroll to top of message container
+        messageContainer.scrollTop = 0;
     }
 
     // Message actions (Pin, Bookmark, Reaction)
