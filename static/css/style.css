@@ -50,6 +50,18 @@ body {
     margin: 0;
 }
 
+/* Channel add button */
+.btn-outline-primary {
+    border: none;
+    color: var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
 .channel-item {
     padding: 0.5rem 1rem;
     cursor: pointer;
