@@ -66,9 +66,11 @@ function createMessageHTML(data, reactionGroups) {
                 <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
                 <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
                 <div class="message-menu" id="menu-${data.id}">
-                    <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
+                    <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy Message Contents</div>
                     <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
                     <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                </div>
+                <div class="toast-container"></div>
                 </div>
             </div>
         </div>

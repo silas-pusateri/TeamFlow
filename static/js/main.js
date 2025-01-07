@@ -705,8 +705,26 @@ window.toggleMessageMenu = function(event, messageId) {
 window.copyMessageContent = function(messageId) {
     const message = document.querySelector(`[data-message-id="${messageId}"]`);
     const content = message.querySelector('.message-content').textContent;
-    navigator.clipboard.writeText(content);
+    navigator.clipboard.writeText(content).then(() => {
+        showToast('Message copied to clipboard');
+    });
 };
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
 window.copyMessageLink = function(messageId) {
     const baseUrl = window.location.origin + window.location.pathname;
