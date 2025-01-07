@@ -51,6 +51,7 @@ socket.on('message', (data) => {
         });
     }
 
+    data.content = parseChannelReferences(data.content);
     messageElement.innerHTML = createMessageHTML(data, reactionGroups);
     messageContainer.appendChild(messageElement);
     messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -303,3 +304,18 @@ socket.on('channel_info', (data) => {
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
 });
+
+
+function parseChannelReferences(content) {
+    const channelRegex = /\#([a-zA-Z0-9_-]+)/g; // Matches #channelName
+    return content.replace(channelRegex, (match, channelName) => {
+        //  Replace with a clickable link.  This assumes you have a function `selectChannel`
+        return `<a href="#" onclick="selectChannel('${channelName}')">#${channelName}</a>`;
+    });
+}
+
+// Placeholder for selectChannel function.  You'll need to implement this based on your app's logic.
+function selectChannel(channelName) {
+    console.log("Selecting channel:", channelName);
+    // Your channel selection logic here...  This might involve updating the UI, emitting a socket event, etc.
+}
