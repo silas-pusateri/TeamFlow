@@ -10,6 +10,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256))
     is_online = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default="Available")
+    custom_status = db.Column(db.String(100))  # New field for custom status message
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     messages = db.relationship('Message', backref='user', lazy=True, foreign_keys='Message.user_id')
     pinned_messages = db.relationship('Message', backref='pinned_by', lazy=True, foreign_keys='Message.pinned_by_id')

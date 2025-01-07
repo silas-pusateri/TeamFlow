@@ -95,6 +95,12 @@ body {
 .username {
     font-weight: 600;
     color: var(--primary-color);
+    cursor: pointer;
+    position: relative;
+}
+
+.username:hover {
+    text-decoration: underline;
 }
 
 .timestamp {
@@ -463,4 +469,49 @@ body {
 
 .dark-theme .auth-container .card-title {
     color: var(--text-color);
+}
+
+/* User Status Popup styles - Add after existing styles */
+.user-status-popup {
+    position: absolute;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    min-width: 200px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.user-status-popup.active {
+    display: block;
+}
+
+.user-status-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.user-status-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.user-custom-status {
+    color: var(--text-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+
+/* Dark theme support for user status popup */
+.dark-theme .user-status-popup {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }

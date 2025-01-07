@@ -262,3 +262,42 @@ def handle_create_channel(data):
         except Exception as e:
             logging.error(f"Error in handle_create_channel: {str(e)}")
             db.session.rollback()
+
+
+# Add these new socket event handlers after the existing handlers
+
+@socketio.on('get_user_status')
+def handle_get_user_status(data):
+    if current_user.is_authenticated:
+        try:
+            username = data.get('username')
+            user = User.query.filter_by(username=username).first()
+            if user:
+                emit('user_status', {
+                    'username': user.username,
+                    'is_online': user.is_online,
+                    'custom_status': user.custom_status,
+                    'last_seen': user.last_seen.isoformat() if user.last_seen else None
+                })
+        except Exception as e:
+            logging.error(f"Error in handle_get_user_status: {str(e)}")
+
+@socketio.on('update_custom_status')
+def handle_update_custom_status(data):
+    if current_user.is_authenticated:
+        try:
+            status = data.get('status', '').strip()
+            if len(status) <= 100:  # Enforce maximum length
+                current_user.custom_status = status
+                db.session.commit()
+
+                # Broadcast status update to all users
+                emit('user_status_updated', {
+                    'user_id': current_user.id,
+                    'username': current_user.username,
+                    'is_online': current_user.is_online,
+                    'custom_status': current_user.custom_status
+                }, broadcast=True)
+        except Exception as e:
+            logging.error(f"Error in handle_update_custom_status: {str(e)}")
+            db.session.rollback()

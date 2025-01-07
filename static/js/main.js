@@ -241,4 +241,77 @@ document.addEventListener('DOMContentLoaded', function() {
         emojiPicker.style.display = 'none';
         document.removeEventListener('click', handleClickOutside);
     }
+
+    // User Status Popup handling
+    let currentPopup = null;
+
+    function createUserStatusPopup(username, isOnline, customStatus) {
+        const popup = document.createElement('div');
+        popup.className = 'user-status-popup';
+        popup.innerHTML = `
+            <div class="user-status-header">
+                <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                <span class="user-status-name">${username}</span>
+            </div>
+            ${customStatus ? `<div class="user-custom-status">${customStatus}</div>` : ''}
+        `;
+        return popup;
+    }
+
+    function showUserStatusPopup(event, userData) {
+        // Remove any existing popup
+        hideUserStatusPopup();
+
+        const popup = createUserStatusPopup(
+            userData.username,
+            userData.is_online,
+            userData.custom_status
+        );
+
+        // Position the popup
+        const rect = event.target.getBoundingClientRect();
+        popup.style.left = `${rect.left}px`;
+        popup.style.top = `${rect.bottom + 5}px`;
+
+        // Add to document
+        document.body.appendChild(popup);
+        currentPopup = popup;
+
+        // Show with animation
+        requestAnimationFrame(() => {
+            popup.classList.add('active');
+        });
+    }
+
+    function hideUserStatusPopup() {
+        if (currentPopup) {
+            currentPopup.remove();
+            currentPopup = null;
+        }
+    }
+
+    // Add hover handlers for usernames
+    document.addEventListener('mouseover', async (e) => {
+        const usernameElement = e.target.closest('.username');
+        if (usernameElement) {
+            const username = usernameElement.textContent;
+            // Emit socket event to get user status
+            socket.emit('get_user_status', { username });
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const usernameElement = e.target.closest('.username');
+        if (usernameElement) {
+            hideUserStatusPopup();
+        }
+    });
+
+    // Handle user status updates from server
+    socket.on('user_status', (userData) => {
+        const usernameElement = document.querySelector(`.username:hover`);
+        if (usernameElement) {
+            showUserStatusPopup(e, userData); //Corrected: passed 'e' instead of 'event'
+        }
+    });
 });
