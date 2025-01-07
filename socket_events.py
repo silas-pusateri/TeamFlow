@@ -54,6 +54,11 @@ def handle_join(data):
         logging.error(f"Error in handle_join: {str(e)}")
         db.session.rollback()
 
+@socketio.on('leave')
+def handle_leave(data):
+    if 'channel' in data:
+        leave_room(data['channel'])
+
 def create_message_data(message):
     """Helper function to create message data dictionary with proper error handling"""
     try:
@@ -131,6 +136,52 @@ def handle_message(data):
             logging.error(f"Error in handle_message: {str(e)}")
             db.session.rollback()
 
+@socketio.on('reaction')
+def handle_reaction(data):
+    if current_user.is_authenticated:
+        try:
+            message_id = data['message_id']
+            emoji = data['emoji']
+
+            # Check if user already reacted with this emoji
+            existing_reaction = Reaction.query.filter(
+                and_(
+                    Reaction.message_id == message_id,
+                    Reaction.user_id == current_user.id,
+                    Reaction.emoji == emoji
+                )
+            ).first()
+
+            message = Message.query.get(message_id)
+            if not message:
+                return
+
+            if existing_reaction:
+                # Remove reaction if it exists
+                db.session.delete(existing_reaction)
+            else:
+                # Add new reaction
+                reaction = Reaction(
+                    emoji=emoji,
+                    message_id=message_id,
+                    user_id=current_user.id
+                )
+                db.session.add(reaction)
+
+            db.session.commit()
+
+            # Broadcast the reaction update
+            emit('reaction_added', {
+                'message_id': message_id,
+                'emoji': emoji,
+                'user_id': current_user.id,
+                'user': current_user.username
+            }, room=message.channel_id)
+
+        except Exception as e:
+            logging.error(f"Error in handle_reaction: {str(e)}")
+            db.session.rollback()
+
 @socketio.on('thread_reply')
 def handle_thread_reply(data):
     if current_user.is_authenticated:
@@ -156,104 +207,6 @@ def handle_thread_reply(data):
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")
-            db.session.rollback()
-
-@socketio.on('pin_message')
-def handle_pin_message(data):
-    if current_user.is_authenticated:
-        try:
-            message = Message.query.get(data['message_id'])
-            if message:
-                message.is_pinned = not message.is_pinned
-                if message.is_pinned:
-                    message.pinned_at = datetime.utcnow()
-                    message.pinned_by_id = current_user.id
-                else:
-                    message.pinned_at = None
-                    message.pinned_by_id = None
-                db.session.commit()
-
-                emit('message_pinned', {
-                    'message_id': message.id,
-                    'is_pinned': message.is_pinned,
-                    'pinned_by': current_user.username,
-                    'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None
-                }, room=message.channel_id)
-        except Exception as e:
-            logging.error(f"Error in handle_pin_message: {str(e)}")
-            db.session.rollback()
-
-@socketio.on('bookmark_message')
-def handle_bookmark_message(data):
-    if current_user.is_authenticated:
-        try:
-            existing_bookmark = UserBookmark.query.filter_by(
-                user_id=current_user.id,
-                message_id=data['message_id']
-            ).first()
-
-            if existing_bookmark:
-                db.session.delete(existing_bookmark)
-                is_bookmarked = False
-            else:
-                bookmark = UserBookmark(
-                    user_id=current_user.id,
-                    message_id=data['message_id'],
-                    note=data.get('note', '')
-                )
-                db.session.add(bookmark)
-                is_bookmarked = True
-
-            db.session.commit()
-
-            emit('message_bookmarked', {
-                'message_id': data['message_id'],
-                'is_bookmarked': is_bookmarked,
-                'user_id': current_user.id
-            }, room=current_user.id)
-        except Exception as e:
-            logging.error(f"Error in handle_bookmark_message: {str(e)}")
-            db.session.rollback()
-
-@socketio.on('reaction')
-def handle_reaction(data):
-    if current_user.is_authenticated:
-        try:
-            message_id = data['message_id']
-            emoji = data['emoji']
-
-            # Check if user already reacted with this emoji
-            existing_reaction = Reaction.query.filter(and_(
-                Reaction.message_id == message_id,
-                Reaction.user_id == current_user.id,
-                Reaction.emoji == emoji
-            )).first()
-
-            if existing_reaction:
-                # Remove reaction if it exists
-                db.session.delete(existing_reaction)
-                db.session.commit()
-            else:
-                # Add new reaction
-                reaction = Reaction(
-                    emoji=emoji,
-                    message_id=message_id,
-                    user_id=current_user.id
-                )
-                db.session.add(reaction)
-                db.session.commit()
-
-            # Broadcast the reaction update
-            message = Message.query.get(message_id)
-            if message:
-                emit('reaction_added', {
-                    'message_id': message_id,
-                    'emoji': emoji,
-                    'user_id': current_user.id,
-                    'user': current_user.username
-                }, room=message.channel_id)
-        except Exception as e:
-            logging.error(f"Error in handle_reaction: {str(e)}")
             db.session.rollback()
 
 @socketio.on('disconnect')
