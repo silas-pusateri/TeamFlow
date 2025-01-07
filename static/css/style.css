@@ -130,7 +130,7 @@ body {
 .message {
     position: relative;
     margin-bottom: 1rem;
-    padding: 1rem;
+    padding: 1rem 1rem 3rem 1rem;
     border-radius: 8px;
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -176,7 +176,7 @@ body {
     padding: 0.5rem;
     position: absolute;
     right: 1rem;
-    bottom: 0.5rem;  /* Changed from top to bottom */
+    bottom: 0.5rem;
     background-color: var(--bg-color);
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -188,7 +188,7 @@ body {
     display: none;
     position: absolute;
     right: 1rem;
-    bottom: 0.5rem;  /* Changed from top to bottom */
+    bottom: 0.5rem;
     background-color: var(--bg-color);
     border-radius: 4px;
     padding: 0.25rem;
@@ -225,7 +225,7 @@ body {
 
 /* Thread styles */
 .thread-container {
-    margin: 0.5rem 0 0.5rem 2rem;
+    margin: 0.5rem 0 2rem 2rem;
     padding: 1rem;
     border-left: 2px solid var(--border-color);
     background-color: rgba(0, 0, 0, 0.02);
