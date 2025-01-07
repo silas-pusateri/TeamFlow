@@ -946,15 +946,3 @@ body {
     text-decoration: underline;
     opacity: 0.8;
 }
-
-.channel-tooltip {
-    position: fixed;
-    background: var(--primary-color);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    z-index: 1000;
-    animation: fadeIn 0.2s ease-out;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}

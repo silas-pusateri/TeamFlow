@@ -317,23 +317,7 @@ document.addEventListener('click', (e) => {
         const channelElement = document.querySelector(`.channel-item[data-channel-name="${channelName}"]`);
         if (channelElement) {
             const channelId = channelElement.dataset.channelId;
-            
-            // Create and show tooltip
-            const tooltip = document.createElement('div');
-            tooltip.className = 'channel-tooltip';
-            tooltip.textContent = `Switching to #${channelName}`;
-            document.body.appendChild(tooltip);
-
-            // Position tooltip near click
-            const rect = channelRef.getBoundingClientRect();
-            tooltip.style.top = `${rect.bottom + 5}px`;
-            tooltip.style.left = `${rect.left}px`;
-
-            // Remove tooltip and switch channel after delay
-            setTimeout(() => {
-                tooltip.remove();
-                window.switchChannel(channelId);
-            }, 800);
+            window.switchChannel(channelId);
         }
     }
 });
