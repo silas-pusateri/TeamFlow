@@ -76,21 +76,6 @@ def create_message_data(message):
             'user': reaction.user.username if reaction.user else 'Unknown'
         } for reaction in message.reactions]
 
-        # Get thread messages
-        threads = []
-        thread_messages = Thread.query.filter_by(message_id=message.id)\
-            .order_by(Thread.timestamp)\
-            .all()
-
-        for thread in thread_messages:
-            thread_data = {
-                'id': thread.id,
-                'content': thread.content,
-                'user': thread.user.username if thread.user else 'Unknown',
-                'timestamp': thread.timestamp.isoformat()
-            }
-            threads.append(thread_data)
-
         # Get replies (nested messages)
         replies = []
         if message.replies:
@@ -99,7 +84,13 @@ def create_message_data(message):
                     'id': reply.id,
                     'content': reply.content,
                     'user': reply.user.username if reply.user else 'Unknown',
-                    'timestamp': reply.timestamp.isoformat()
+                    'timestamp': reply.timestamp.isoformat(),
+                    'parent_id': reply.parent_id,
+                    'reactions': [{
+                        'emoji': r.emoji,
+                        'user_id': r.user_id,
+                        'user': r.user.username if r.user else 'Unknown'
+                    } for r in reply.reactions]
                 }
                 replies.append(reply_data)
 
@@ -112,7 +103,6 @@ def create_message_data(message):
             'pinned_by': message.pinned_by.username if message.pinned_by else None,
             'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
             'reactions': reactions,
-            'threads': threads,
             'replies': replies,
             'parent_id': message.parent_id
         }
@@ -210,35 +200,33 @@ def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
             parent_id = data['parent_id']
-            
-            # Check if replying to a thread message
-            parent_thread = Thread.query.get(parent_id)
-            if parent_thread:
-                # If replying to a thread, use the original message as parent
-                parent_id = parent_thread.message_id
-            
-            # Create and save thread message
-            thread = Thread(
-                message_id=parent_id,  # Use original message ID
+
+            # Create a new message as a reply
+            message = Message(
                 content=data['content'],
-                user_id=current_user.id
+                user_id=current_user.id,
+                channel_id=data['channel_id'],
+                parent_id=parent_id  # Set the parent_id to create the thread hierarchy
             )
-            db.session.add(thread)
+            db.session.add(message)
             db.session.commit()
 
-            # Get parent message for channel info
+            # Get parent message for channel info and create message data
             parent_message = Message.query.get(parent_id)
-            
-            # Broadcast thread message
-            thread_data = {
-                'id': thread.id,
-                'content': thread.content,
-                'user': current_user.username,
-                'parent_id': parent_id,
-                'timestamp': thread.timestamp.isoformat(),
-                'channel_id': parent_message.channel_id if parent_message else data['channel_id']
-            }
-            emit('thread_message', thread_data, room=thread_data['channel_id'])
+            if parent_message:
+                message_data = create_message_data(message)
+                if message_data:
+                    # Emit the thread reply to all clients in the channel
+                    emit('thread_message', {
+                        'id': message.id,
+                        'content': message.content,
+                        'user': current_user.username,
+                        'parent_id': parent_id,
+                        'timestamp': message.timestamp.isoformat(),
+                        'channel_id': parent_message.channel_id,
+                        'replies': [],  # Initialize empty replies array for this message
+                        'reactions': []  # Initialize empty reactions array
+                    }, room=parent_message.channel_id)
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")
@@ -444,7 +432,7 @@ def handle_channel_info(data):
         try:
             channel_id = data['channel_id']
             channel = Channel.query.get(channel_id)
-            
+
             if channel:
                 creator = User.query.get(channel.created_by_id)
                 message_count = Message.query.filter_by(channel_id=channel_id, parent_id=None).count()
