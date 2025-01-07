@@ -40,6 +40,30 @@ function switchChannel(channelId) {
     messageContainer.scrollTop = 0;
 }
 
+// Global sendMessage function
+window.sendMessage = function() {
+    const messageInput = document.getElementById('message-input');
+    if (!messageInput) return;
+    
+    const content = messageInput.value.trim();
+    if (content && currentChannel) {
+        const messageData = {
+            content: content,
+            channel_id: currentChannel
+        };
+
+        if (window.replyingTo) {
+            messageData.parent_id = window.replyingTo.messageId;
+        }
+
+        socket.emit(window.replyingTo ? 'thread_reply' : 'message', messageData);
+        messageInput.value = '';
+        if (typeof window.cancelReply === 'function') {
+            window.cancelReply();
+        }
+    }
+};
+
 // Make switchChannel globally accessible
 window.switchChannel = switchChannel;
 
@@ -116,16 +140,11 @@ document.addEventListener('DOMContentLoaded', function() {
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendMessage();
+            window.sendMessage();
         }
     });
 
     // Add click handler to existing send button
-    const sendButton = document.querySelector('.send-button');
-    if (sendButton) {
-        sendButton.addEventListener('click', sendMessage);
-    }
-
     // Select first channel by default
     const firstChannel = channelList.querySelector('.channel-item');
     if (firstChannel) {
@@ -133,22 +152,10 @@ document.addEventListener('DOMContentLoaded', function() {
         switchChannel(channelId);
     }
 
-    function sendMessage() {
-        const content = messageInput.value.trim();
-        if (content && currentChannel) {
-            const messageData = {
-                content: content,
-                channel_id: currentChannel
-            };
-
-            if (replyingTo) {
-                messageData.parent_id = replyingTo.messageId;
-            }
-
-            socket.emit(replyingTo ? 'thread_reply' : 'message', messageData);
-            messageInput.value = '';
-            cancelReply();
-        }
+    // Add send button click handler
+    const sendButton = document.querySelector('.send-button');
+    if (sendButton) {
+        sendButton.addEventListener('click', () => window.sendMessage());
     }
 
     // Remove window.switchChannel from here as it's now defined globally
