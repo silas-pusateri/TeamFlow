@@ -129,15 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             if (replyingTo) {
-                // Always use the top-level parent message ID for thread consistency
                 messageData.parent_id = replyingTo.parentMessageId;
                 messageData.replied_to_id = replyingTo.messageId;
-                messageData.is_thread_reply = replyingTo.isThreadReply;
+                messageData.is_thread_reply = true;
 
-                // Emit thread reply with the correct parent ID
+                // Emit thread reply
                 socket.emit('thread_reply', messageData);
 
-                // Find the parent message and handle thread container
+                // Find the parent message
                 const parentMessage = document.querySelector(`[data-message-id="${replyingTo.parentMessageId}"]`);
                 if (parentMessage) {
                     let threadContainer = parentMessage.querySelector('.thread-container');
@@ -146,9 +145,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         threadContainer.className = 'thread-container active';
                         threadContainer.dataset.parentId = replyingTo.parentMessageId;
                         parentMessage.appendChild(threadContainer);
-                    } else {
-                        threadContainer.classList.add('active');
                     }
+                    threadContainer.classList.add('active');
                     
                     // Ensure proper nesting of replies
                     if (replyingTo.isThreadReply) {
@@ -226,12 +224,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageInput = document.getElementById('message-input');
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         
-        // Get correct parent message ID based on thread hierarchy
+        // Get parent message ID - either the current message or its thread container parent
         const threadContainer = messageElement.closest('.thread-container');
-        const messageContainer = messageElement.closest('.message');
-        const parentMessageId = threadContainer ? 
-            threadContainer.dataset.parentId : 
-            messageContainer ? messageContainer.dataset.messageId : messageId;
+        const parentMessageId = threadContainer ? threadContainer.dataset.parentId : messageId;
         
         window.replyingTo = { 
             messageId: messageId,
