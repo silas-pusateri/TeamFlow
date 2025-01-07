@@ -186,7 +186,7 @@ socket.on('thread_message', (data) => {
     // Ensure thread container is visible
     threadContainer.classList.add('active');
     threadContainer.style.display = 'block';
-    
+
     // Always show the thread container when a new reply is added
     threadContainer.classList.add('active');
     threadContainer.style.display = 'block';
@@ -200,7 +200,7 @@ socket.on('thread_message', (data) => {
 
     // Parse message content for channel references
     data.content = parseChannelReferences(data.content);
-    
+
     // Create thread message HTML with proper reactions and actions
     threadMessage.innerHTML = createThreadMessageHTML({
         ...data,
@@ -221,7 +221,7 @@ function updateThreadCount(parentMessage) {
     const threadContainer = parentMessage.querySelector('.thread-container');
     const threadCount = threadContainer.querySelectorAll('.thread-message').length;
     let countDisplay = parentMessage.querySelector('.thread-count');
-    
+
     if (!countDisplay) {
         countDisplay = document.createElement('div');
         countDisplay.className = 'thread-count';
@@ -230,7 +230,7 @@ function updateThreadCount(parentMessage) {
             messageContent.appendChild(countDisplay);
         }
     }
-    
+
     countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
     countDisplay.style.display = 'block';
 }
@@ -371,7 +371,9 @@ socket.on('channel_info', (data) => {
     if (header) {
         header.querySelector('.channel-name').textContent = `# ${data.name}`;
         header.querySelector('.channel-description').textContent = data.description;
-        header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
+        const ownerSpan = header.querySelector('.channel-owner');
+        ownerSpan.textContent = `Created by ${data.creator}`;
+        ownerSpan.dataset.userId = data.creator_id;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
