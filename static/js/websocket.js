@@ -65,8 +65,8 @@ function createMessageHTML(data, reactionGroups) {
                 <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
                 <div class="message-menu" id="menu-${data.id}">
                     <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
-                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
-                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
                 </div>
             </div>
         </div>
@@ -321,20 +321,3 @@ document.addEventListener('click', (e) => {
         }
     }
 });
-function handleMessageClick(messageId) {
-    window.location.href = `/message/${messageId}`;
-}
-
-// Add click event listener to messages
-document.addEventListener('click', function(e) {
-    if (e.target.closest('.message')) {
-        const messageId = e.target.closest('.message').dataset.messageId;
-        handleMessageClick(messageId);
-    }
-});
-
-window.copyMessageLink = function(messageId) {
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/message/${messageId}`;
-    navigator.clipboard.writeText(link);
-};
