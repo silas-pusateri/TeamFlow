@@ -550,8 +550,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Update search when modal keywords change
-    document.getElementById('modalSearchInput').addEventListener('input', () => {
-        searchInput.value = document.getElementById('modalSearchInput').value;
+    const modalSearchInput = document.getElementById('modalSearchInput');
+    modalSearchInput.addEventListener('input', () => {
+        searchInput.value = modalSearchInput.value;
+    });
+    
+    modalSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performSearch();
+        }
     });
 
     socket.on('search_results', (data) => {
