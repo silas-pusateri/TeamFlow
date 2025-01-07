@@ -28,10 +28,16 @@ class User(UserMixin, db.Model):
 
     def get_activity_stats(self):
         """Get user activity statistics"""
+        # Get distinct channels the user has posted in
+        channels_joined = db.session.query(Message.channel_id)\
+            .filter(Message.user_id == self.id)\
+            .distinct()\
+            .count()
+            
         return {
             'total_messages': len(self.messages),
             'reactions_given': len(self.reactions),
-            'bookmarks_count': len(self.bookmarks),
+            'channels_joined': channels_joined,
             'threads_participated': len(set(thread.message_id for thread in self.thread_messages))
         }
 
