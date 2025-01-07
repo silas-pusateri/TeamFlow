@@ -169,7 +169,7 @@ body {
     line-height: 1.5;
 }
 
-/* Message actions */
+/* Message hover actions */
 .message-hover-actions {
     display: none;
     gap: 0.5rem;
@@ -185,7 +185,7 @@ body {
 
 /* Special styling for thread message hover actions */
 .thread-message .message-hover-actions {
-    display: none;
+    display: none;  /* Always hidden by default for thread messages */
     position: absolute;
     right: 1rem;
     bottom: 0.5rem;
@@ -195,8 +195,9 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.message:hover .message-hover-actions,
-.thread-message:hover .message-hover-actions {
+/* Show hover actions only for the specific message being hovered */
+.message:hover > .message-hover-actions,
+.thread-message:hover > .message-hover-actions {
     display: flex;
 }
 
@@ -212,11 +213,6 @@ body {
     gap: 0.5rem;
     font-size: 0.9rem;
     transition: all 0.2s ease;
-}
-
-.hover-action-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: var(--primary-color);
 }
 
 .dark-theme .hover-action-btn:hover {
