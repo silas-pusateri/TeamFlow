@@ -1,8 +1,40 @@
+// Define switchChannel in global scope
+window.switchChannel = function(channelId) {
+    const socket = io();
+    if (window.currentChannel) {
+        socket.emit('leave', { channel: window.currentChannel });
+    }
+
+    const messageContainer = document.getElementById('message-container');
+    messageContainer.innerHTML = `
+        <div class="no-messages-placeholder">
+            <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+        </div>
+    `;
+
+    window.currentChannel = channelId;
+    socket.emit('join', { channel: channelId });
+    socket.emit('get_channel_info', { channel_id: channelId });
+
+    // Reset reply state when switching channels
+    if (typeof window.cancelReply === 'function') {
+        window.cancelReply();
+    }
+
+    // Highlight selected channel
+    document.querySelectorAll('.channel-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.channelId === channelId) {
+            item.classList.add('active');
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const messageContainer = document.getElementById('message-container');
     const messageInput = document.getElementById('message-input');
     const channelList = document.getElementById('channel-list');
-    let currentChannel = null;
+    window.currentChannel = null;
     let replyingTo = null;
 
     // Theme toggle
