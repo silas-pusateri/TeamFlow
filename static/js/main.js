@@ -544,6 +544,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Sync search input with modal
+    searchBtn.addEventListener('click', () => {
+        document.getElementById('modalSearchInput').value = searchInput.value;
+    });
+
+    // Update search when modal keywords change
+    document.getElementById('modalSearchInput').addEventListener('input', () => {
+        searchInput.value = document.getElementById('modalSearchInput').value;
+    });
+
     socket.on('search_results', (data) => {
         if (searchResults) {
             if (data.results.length === 0) {
