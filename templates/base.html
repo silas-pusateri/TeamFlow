@@ -28,16 +28,16 @@
                     </li>
                     {% endif %}
                 </ul>
+                {% if current_user.is_authenticated %}
+                <div class="nav-link search-container mx-auto">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search messages...">
+                    <button id="searchBtn" class="btn btn-outline-light">
+                        Find
+                    </button>
+                </div>
+                {% endif %}
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
-                    <li class="nav-item me-2">
-                        <div class="nav-link search-container">
-                            <input type="text" id="searchInput" class="form-control" placeholder="Search messages...">
-                            <button id="searchBtn" class="btn btn-outline-light">
-                                Find
-                            </button>
-                        </div>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
                     </li>
