@@ -471,17 +471,18 @@ body {
     color: var(--text-color);
 }
 
-/* User Status Popup styles - Add after existing styles */
+/* User Status Popup styles */
 .user-status-popup {
     position: absolute;
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     display: none;
-    min-width: 200px;
+    min-width: 300px;
+    max-width: 400px;
     animation: fadeIn 0.2s ease-out;
 }
 
@@ -492,26 +493,115 @@ body {
 .user-status-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.user-info {
+    flex: 1;
 }
 
 .user-status-name {
     font-weight: 600;
     color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.user-role {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    margin-bottom: 8px;
 }
 
 .user-custom-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     color: var(--text-color);
-    opacity: 0.8;
     font-size: 0.9rem;
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
+.status-emoji {
+    font-size: 1.2rem;
+}
 
-/* Dark theme support for user status popup */
+.activity-section {
+    margin-top: 12px;
+    font-size: 0.9rem;
+}
+
+.activity-header {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
+.activity-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.stat-item {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.recent-activity {
+    margin-top: 12px;
+}
+
+.activity-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.activity-timestamp {
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: 0.8rem;
+}
+
+/* Dark theme support */
 .dark-theme .user-status-popup {
     background-color: var(--bg-color);
     border-color: var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-theme .stat-item {
+    background-color: rgba(255, 255, 255, 0.05);
 }

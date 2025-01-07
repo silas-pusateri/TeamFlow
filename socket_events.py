@@ -264,8 +264,6 @@ def handle_create_channel(data):
             db.session.rollback()
 
 
-# Add these new socket event handlers after the existing handlers
-
 @socketio.on('get_user_status')
 def handle_get_user_status(data):
     if current_user.is_authenticated:
@@ -273,11 +271,26 @@ def handle_get_user_status(data):
             username = data.get('username')
             user = User.query.filter_by(username=username).first()
             if user:
+                # Get user activity stats
+                stats = user.get_activity_stats()
+                recent_activity = [
+                    {
+                        'content': msg.content,
+                        'timestamp': msg.timestamp.isoformat()
+                    } for msg in user.get_recent_activity()
+                ]
+
                 emit('user_status', {
                     'username': user.username,
                     'is_online': user.is_online,
                     'custom_status': user.custom_status,
-                    'last_seen': user.last_seen.isoformat() if user.last_seen else None
+                    'status_emoji': user.status_emoji,
+                    'last_seen': user.last_seen.isoformat() if user.last_seen else None,
+                    'role': user.role,
+                    'join_date': user.join_date.isoformat(),
+                    'bio': user.bio,
+                    'stats': stats,
+                    'recent_activity': recent_activity
                 })
         except Exception as e:
             logging.error(f"Error in handle_get_user_status: {str(e)}")
@@ -287,16 +300,31 @@ def handle_update_custom_status(data):
     if current_user.is_authenticated:
         try:
             status = data.get('status', '').strip()
-            if len(status) <= 100:  # Enforce maximum length
+            emoji = data.get('emoji', '').strip()
+
+            if len(status) <= 100 and len(emoji) <= 32:  # Enforce maximum lengths
                 current_user.custom_status = status
+                current_user.status_emoji = emoji
                 db.session.commit()
+
+                # Get updated stats
+                stats = current_user.get_activity_stats()
+                recent_activity = [
+                    {
+                        'content': msg.content,
+                        'timestamp': msg.timestamp.isoformat()
+                    } for msg in current_user.get_recent_activity()
+                ]
 
                 # Broadcast status update to all users
                 emit('user_status_updated', {
                     'user_id': current_user.id,
                     'username': current_user.username,
                     'is_online': current_user.is_online,
-                    'custom_status': current_user.custom_status
+                    'custom_status': current_user.custom_status,
+                    'status_emoji': current_user.status_emoji,
+                    'stats': stats,
+                    'recent_activity': recent_activity
                 }, broadcast=True)
         except Exception as e:
             logging.error(f"Error in handle_update_custom_status: {str(e)}")

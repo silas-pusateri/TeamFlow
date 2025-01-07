@@ -245,33 +245,109 @@ document.addEventListener('DOMContentLoaded', function() {
     // User Status Popup handling
     let currentPopup = null;
 
-    function createUserStatusPopup(username, isOnline, customStatus) {
+    function createUserStatusPopup(userData) {
         const popup = document.createElement('div');
         popup.className = 'user-status-popup';
+
+        const initials = userData.username.slice(0, 2).toUpperCase();
+        const timeAgo = getTimeAgo(new Date(userData.last_seen));
+
         popup.innerHTML = `
             <div class="user-status-header">
-                <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
-                <span class="user-status-name">${username}</span>
+                <div class="user-avatar">${initials}</div>
+                <div class="user-info">
+                    <div class="user-status-name">${userData.username}</div>
+                    <div class="user-role">${userData.role || 'Member'}</div>
+                    <div class="user-custom-status">
+                        ${userData.status_emoji ? `<span class="status-emoji">${userData.status_emoji}</span>` : ''}
+                        <span>${userData.custom_status || 'No status set'}</span>
+                    </div>
+                </div>
             </div>
-            ${customStatus ? `<div class="user-custom-status">${customStatus}</div>` : ''}
+            <div class="activity-section">
+                <div class="activity-header">Activity Stats</div>
+                <div class="activity-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">${userData.stats.total_messages}</div>
+                        <div class="stat-label">Messages</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${userData.stats.reactions_given}</div>
+                        <div class="stat-label">Reactions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${userData.stats.threads_participated}</div>
+                        <div class="stat-label">Threads</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${userData.stats.bookmarks_count}</div>
+                        <div class="stat-label">Bookmarks</div>
+                    </div>
+                </div>
+
+                ${userData.recent_activity.length ? `
+                    <div class="recent-activity">
+                        <div class="activity-header">Recent Activity</div>
+                        ${userData.recent_activity.map(activity => `
+                            <div class="activity-item">
+                                <div>${activity.content}</div>
+                                <div class="activity-timestamp">${new Date(activity.timestamp).toLocaleString()}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+
+            <div class="user-presence">
+                <span class="status-dot ${userData.is_online ? 'online' : 'offline'}"></span>
+                ${userData.is_online ? 'Online' : `Last seen ${timeAgo}`}
+            </div>
         `;
+
         return popup;
+    }
+
+    function getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+
+        const intervals = {
+            year: 31536000,
+            month: 2592000,
+            week: 604800,
+            day: 86400,
+            hour: 3600,
+            minute: 60
+        };
+
+        for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+            const interval = Math.floor(seconds / secondsInUnit);
+            if (interval >= 1) {
+                return `${interval} ${unit}${interval === 1 ? '' : 's'} ago`;
+            }
+        }
+
+        return 'just now';
     }
 
     function showUserStatusPopup(event, userData) {
         // Remove any existing popup
         hideUserStatusPopup();
 
-        const popup = createUserStatusPopup(
-            userData.username,
-            userData.is_online,
-            userData.custom_status
-        );
+        const popup = createUserStatusPopup(userData);
 
         // Position the popup
         const rect = event.target.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const popupHeight = 400; // Approximate height of the popup
+
+        // Calculate position
+        let top = rect.bottom + 5;
+        if (top + popupHeight > viewportHeight) {
+            top = rect.top - popupHeight - 5;
+        }
+
         popup.style.left = `${rect.left}px`;
-        popup.style.top = `${rect.bottom + 5}px`;
+        popup.style.top = `${top}px`;
 
         // Add to document
         document.body.appendChild(popup);
@@ -311,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('user_status', (userData) => {
         const usernameElement = document.querySelector(`.username:hover`);
         if (usernameElement) {
-            showUserStatusPopup(e, userData); //Corrected: passed 'e' instead of 'event'
+            showUserStatusPopup(e, userData);
         }
     });
 });

@@ -10,8 +10,12 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256))
     is_online = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default="Available")
-    custom_status = db.Column(db.String(100))  # New field for custom status message
+    custom_status = db.Column(db.String(100))
+    status_emoji = db.Column(db.String(32))  # New: Status emoji
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    role = db.Column(db.String(20), default="member")  # New: User role
+    join_date = db.Column(db.DateTime, default=datetime.utcnow)  # New: Join date
+    bio = db.Column(db.String(500))  # New: User bio
     messages = db.relationship('Message', backref='user', lazy=True, foreign_keys='Message.user_id')
     pinned_messages = db.relationship('Message', backref='pinned_by', lazy=True, foreign_keys='Message.pinned_by_id')
     bookmarks = db.relationship('UserBookmark', backref='user', lazy=True)
@@ -21,6 +25,23 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_activity_stats(self):
+        """Get user activity statistics"""
+        return {
+            'total_messages': len(self.messages),
+            'reactions_given': len(self.reactions),
+            'bookmarks_count': len(self.bookmarks),
+            'threads_participated': len(set(thread.message_id for thread in self.thread_messages))
+        }
+
+    def get_recent_activity(self, limit=5):
+        """Get recent activity summary"""
+        recent_messages = Message.query.filter_by(user_id=self.id)\
+            .order_by(Message.timestamp.desc())\
+            .limit(limit)\
+            .all()
+        return recent_messages
 
 class Channel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
