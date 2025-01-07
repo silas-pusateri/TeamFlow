@@ -210,18 +210,15 @@ def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
             parent_id = data['parent_id']
+            replied_to_id = data.get('replied_to_id')
+            is_thread_reply = data.get('is_thread_reply', False)
             
-            # Check if replying to a thread message
-            parent_thread = Thread.query.get(parent_id)
-            if parent_thread:
-                # If replying to a thread, use the original message as parent
-                parent_id = parent_thread.message_id
-            
-            # Create and save thread message
+            # Always use top-level message as parent
             thread = Thread(
-                message_id=parent_id,  # Use original message ID
+                message_id=parent_id,
                 content=data['content'],
-                user_id=current_user.id
+                user_id=current_user.id,
+                replied_to_id=replied_to_id if is_thread_reply else None
             )
             db.session.add(thread)
             db.session.commit()

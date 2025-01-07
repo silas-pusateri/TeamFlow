@@ -129,19 +129,21 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             if (replyingTo) {
-                // Find the top-level parent message
-                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
-                messageData.parent_id = replyingTo.messageId;
+                // Always use the top-level parent message ID for thread consistency
+                messageData.parent_id = replyingTo.parentMessageId;
+                messageData.replied_to_id = replyingTo.messageId;
+                messageData.is_thread_reply = replyingTo.isThreadReply;
 
                 // Emit thread reply with the correct parent ID
                 socket.emit('thread_reply', messageData);
 
-                // Create or activate thread container if not exists
+                // Find or create thread container in the parent message
+                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.parentMessageId}"]`);
                 let threadContainer = parentMessage.querySelector('.thread-container');
                 if (!threadContainer) {
                     threadContainer = document.createElement('div');
                     threadContainer.className = 'thread-container active';
-                    threadContainer.dataset.parentId = replyingTo.messageId;
+                    threadContainer.dataset.parentId = replyingTo.parentMessageId;
                     parentMessage.appendChild(threadContainer);
                 } else {
                     threadContainer.classList.add('active');
@@ -206,7 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
     window.setReplyContext = function(messageId, username, content) {
         const replyContext = document.querySelector('.reply-context');
         const messageInput = document.getElementById('message-input');
-        window.replyingTo = { messageId, username, content };
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        const parentMessageId = messageElement.closest('.message').dataset.messageId;
+        
+        window.replyingTo = { 
+            messageId: messageId,
+            parentMessageId: parentMessageId,
+            username: username, 
+            content: content,
+            isThreadReply: messageElement.closest('.thread-container') !== null
+        };
 
         if (replyContext) {
             replyContext.style.display = 'flex';
