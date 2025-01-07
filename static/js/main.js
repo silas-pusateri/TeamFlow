@@ -399,6 +399,39 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentUserId; // Declare currentUserId
 
     if (statusModal) {
+        // Populate form with current status when modal opens
+        statusModal.addEventListener('show.bs.modal', () => {
+            const statusBtn = document.querySelector('[data-bs-target="#statusModal"]');
+            if (statusBtn) {
+                // Get current status text (remove emoji if present)
+                const currentStatusText = statusBtn.textContent.trim();
+                const statusMatch = currentStatusText.match(/(?:^|\s)([^📱💻🎯🏃🎮☕🎧🤔].*)$/);
+                if (statusMatch) {
+                    statusText.value = statusMatch[1].trim();
+                }
+
+                // Find and select current emoji if present
+                const emojiMatch = currentStatusText.match(/([📱💻🎯🏃🎮☕🎧🤔])/);
+                if (emojiMatch) {
+                    selectedEmoji = emojiMatch[1];
+                    document.querySelectorAll('.emoji-option').forEach(option => {
+                        if (option.dataset.emoji === selectedEmoji) {
+                            option.classList.add('selected');
+                        }
+                    });
+                }
+            }
+        });
+
+        // Reset form when modal is hidden
+        statusModal.addEventListener('hidden.bs.modal', () => {
+            statusText.value = '';
+            selectedEmoji = '';
+            document.querySelectorAll('.emoji-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        });
+
         // Handle emoji selection
         statusModal.addEventListener('click', (e) => {
             const emojiOption = e.target.closest('.emoji-option');
@@ -423,13 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Close modal
             bootstrap.Modal.getInstance(statusModal).hide();
-
-            // Reset form
-            statusText.value = '';
-            selectedEmoji = '';
-            document.querySelectorAll('.emoji-option').forEach(option => {
-                option.classList.remove('selected');
-            });
         });
     }
 
