@@ -68,6 +68,15 @@ window.sendMessage = function() {
 
 // Add setReplyContext to global scope
 window.setReplyContext = function(messageId, username, content) {
+    const threadMessage = document.querySelector(`.thread-message[data-message-id="${messageId}"]`);
+    if (threadMessage) {
+        // If replying to a thread message, get the parent message's ID
+        const parentMessage = threadMessage.closest('.message');
+        if (parentMessage) {
+            messageId = parentMessage.dataset.messageId;
+        }
+    }
+    
     window.replyingTo = { messageId, username, content };
     const replyContext = document.querySelector('.reply-context');
     if (replyContext) {
