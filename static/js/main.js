@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add hover handlers for usernames
-    document.addEventListener('mouseover', async (e) => {
+    document.addEventListener('mouseover', (e) => {
         const usernameElement = e.target.closest('.username');
         if (usernameElement) {
             const username = usernameElement.textContent;
@@ -385,18 +385,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle user status updates from server
     socket.on('user_status', (userData) => {
-        const usernameElement = document.querySelector(`.username:hover`);
+        const usernameElement = document.querySelector('.username:hover');
         if (usernameElement) {
-            showUserStatusPopup(e, userData);
+            showUserStatusPopup({ target: usernameElement }, userData); // Fixed: Passing proper event object
         }
     });
 
-    // Add these event handlers at the end of the DOMContentLoaded event listener
-    // Status Modal Handling
+    // Add status modal handling after the existing handlers
     const statusModal = document.getElementById('statusModal');
     const statusText = document.getElementById('statusText');
     const updateStatusBtn = document.getElementById('updateStatusBtn');
     let selectedEmoji = '';
+    let currentUserId; // Declare currentUserId
 
     if (statusModal) {
         // Handle emoji selection
@@ -445,5 +445,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
         }
+    });
+
+    // Update currentUserId when received from server
+    socket.on('current_user', (data) => {
+        currentUserId = data.user_id;
     });
 });
