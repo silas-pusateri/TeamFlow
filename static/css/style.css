@@ -229,6 +229,25 @@ body {
     transition: all 0.2s ease;
 }
 
+.thread-message .message-menu-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.thread-message:hover .message-menu-btn {
+    opacity: 1;
+}
+
+.thread-message .message-menu {
+    position: absolute;
+    right: 0.5rem;
+    top: 2rem;
+    z-index: 100;
+}
+
 .thread-message:last-child {
     margin-bottom: 0;
 }

@@ -157,7 +157,35 @@ socket.on('thread_message', (data) => {
         }
         threadContainer.classList.add('active');
 
+        // Check if message already exists in thread
+        const existingMessage = threadContainer.querySelector(`[data-message-id="${data.id}"]`);
+        if (existingMessage) {
+            return;
+        }
+
         const threadMessage = document.createElement('div');
+        threadMessage.classList.add('thread-message');
+        threadMessage.dataset.messageId = data.id;
+        threadMessage.innerHTML = `
+            <div class="message-header">
+                <span class="username">${data.user}</span>
+                <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="message-content">${data.content}</div>
+            <div class="message-actions">
+                <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
+                <div id="menu-${data.id}" class="message-menu">
+                    <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
+                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                </div>
+            </div>
+            <div class="message-hover-actions">
+                <button class="hover-action-btn reaction-btn">😊 React</button>
+                <button class="hover-action-btn reply-btn">↩️ Reply</button>
+            </div>
+            <div class="reactions"></div>
+        `;
         threadMessage.classList.add('thread-message');
         threadMessage.dataset.messageId = data.id;
         threadMessage.innerHTML = createThreadMessageHTML(data);
