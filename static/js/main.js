@@ -137,16 +137,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Emit thread reply with the correct parent ID
                 socket.emit('thread_reply', messageData);
 
-                // Find or create thread container in the parent message
+                // Find the parent message and handle thread container
                 const parentMessage = document.querySelector(`[data-message-id="${replyingTo.parentMessageId}"]`);
-                let threadContainer = parentMessage.querySelector('.thread-container');
-                if (!threadContainer) {
-                    threadContainer = document.createElement('div');
-                    threadContainer.className = 'thread-container active';
-                    threadContainer.dataset.parentId = replyingTo.parentMessageId;
-                    parentMessage.appendChild(threadContainer);
-                } else {
-                    threadContainer.classList.add('active');
+                if (parentMessage) {
+                    let threadContainer = parentMessage.querySelector('.thread-container');
+                    if (!threadContainer) {
+                        threadContainer = document.createElement('div');
+                        threadContainer.className = 'thread-container active';
+                        threadContainer.dataset.parentId = replyingTo.parentMessageId;
+                        parentMessage.appendChild(threadContainer);
+                    } else {
+                        threadContainer.classList.add('active');
+                    }
+                    
+                    // Ensure proper nesting of replies
+                    if (replyingTo.isThreadReply) {
+                        const repliedToMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
+                        if (repliedToMessage) {
+                            let nestedContainer = repliedToMessage.querySelector('.thread-container');
+                            if (!nestedContainer) {
+                                nestedContainer = document.createElement('div');
+                                nestedContainer.className = 'thread-container active';
+                                nestedContainer.dataset.parentId = replyingTo.messageId;
+                                repliedToMessage.appendChild(nestedContainer);
+                            }
+                        }
+                    }
                 }
             } else {
                 socket.emit('message', messageData);
@@ -209,14 +225,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const replyContext = document.querySelector('.reply-context');
         const messageInput = document.getElementById('message-input');
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-        const parentMessageId = messageElement.closest('.message').dataset.messageId;
+        
+        // Get the top-level parent message for the thread
+        const threadContainer = messageElement.closest('.thread-container');
+        const parentMessageId = threadContainer ? 
+            threadContainer.dataset.parentId : 
+            messageElement.dataset.messageId;
         
         window.replyingTo = { 
             messageId: messageId,
             parentMessageId: parentMessageId,
             username: username, 
             content: content,
-            isThreadReply: messageElement.closest('.thread-container') !== null
+            isThreadReply: threadContainer !== null
         };
 
         if (replyContext) {
