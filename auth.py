@@ -25,15 +25,15 @@ def login():
 @auth_bp.route('/test-login', methods=['POST'])
 def test_login():
     # Create test user if doesn't exist
-    email = 'silas.pusateri@gauntletAI.com'
+    email = 'test_user@example.com'
     test_user = User.query.filter_by(email=email).first()
 
     if not test_user:
         test_user = User(
-            username='silas',
+            username='test_user',
             email=email
         )
-        test_user.set_password('test')
+        test_user.set_password('test123')
         db.session.add(test_user)
         db.session.commit()
 
