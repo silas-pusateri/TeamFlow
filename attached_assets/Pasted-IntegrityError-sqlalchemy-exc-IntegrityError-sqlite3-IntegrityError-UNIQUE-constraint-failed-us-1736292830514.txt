@@ -1,0 +1,30 @@
+IntegrityError
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: user.email
+[SQL: INSERT INTO user (username, email, password_hash, is_online, status, custom_status, status_emoji, last_seen, role, join_date, bio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('silas_demo', 'silas.pusateri@gauntletai.com', 'scrypt:32768:8:1$ocLvEQr2K8qLAxu5$e5805efd19088df84ed22bd9dccde177579cb87532d9bdca963c771e96c24322ea25ca8633414a1f112763c695bf41432cc2228782ac20cc9027779d6dbdb855', 0, 'Available', None, None, '2025-01-07 23:32:36.204722', 'member', '2025-01-07 23:32:36.204725', None)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+Traceback (most recent call last)
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The above exception was the direct cause of the following exception:
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+return super().__call__(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 74, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1514, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/TeamFlow-1/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in fu
