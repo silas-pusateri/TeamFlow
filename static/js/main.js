@@ -562,8 +562,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Message context menu functions
-function toggleMessageMenu(event, messageId) {
+    });
+
+// Message context menu functions - global scope
+window.toggleMessageMenu = function(event, messageId) {
     event.stopPropagation();
     const menu = document.getElementById(`menu-${messageId}`);
     
@@ -573,19 +575,19 @@ function toggleMessageMenu(event, messageId) {
     });
     
     menu.classList.toggle('active');
-}
+};
 
-function copyMessageContent(messageId) {
+window.copyMessageContent = function(messageId) {
     const message = document.querySelector(`[data-message-id="${messageId}"]`);
     const content = message.querySelector('.message-content').textContent;
     navigator.clipboard.writeText(content);
-}
+};
 
-function copyMessageLink(messageId) {
+window.copyMessageLink = function(messageId) {
     const baseUrl = window.location.origin + window.location.pathname;
     const link = `${baseUrl}?message=${messageId}`;
     navigator.clipboard.writeText(link);
-}
+};
 
 // Close menus when clicking outside
 document.addEventListener('click', (e) => {
