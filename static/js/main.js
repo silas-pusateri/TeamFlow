@@ -172,6 +172,25 @@ document.addEventListener('DOMContentLoaded', function() {
         channelList.appendChild(channelItem);
     });
 
+    socket.on('channel_deleted', (data) => {
+        const channelItem = document.querySelector(`[data-channel-id="${data.channel_id}"]`);
+        if (channelItem) {
+            channelItem.remove();
+        }
+        if (window.currentChannel === data.channel_id) {
+            // Switch to first available channel or clear view
+            const firstChannel = document.querySelector('.channel-item');
+            if (firstChannel) {
+                switchChannel(firstChannel.dataset.channelId);
+            } else {
+                document.getElementById('message-container').innerHTML = '';
+                document.querySelector('.channel-name').textContent = '';
+                document.querySelector('.channel-description').textContent = '';
+                document.querySelector('.channel-metrics').innerHTML = '';
+            }
+        }
+    });
+
 
     // Channel selection
     channelList.addEventListener('click', (e) => {

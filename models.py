@@ -14,6 +14,7 @@ class User(UserMixin, db.Model):
     status_emoji = db.Column(db.String(32))  # New: Status emoji
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     role = db.Column(db.String(20), default="member")  # New: User role
+    is_admin = db.Column(db.Boolean, default=False)  # Admin status
     join_date = db.Column(db.DateTime, default=datetime.utcnow)  # New: Join date
     bio = db.Column(db.String(500))  # New: User bio
     messages = db.relationship('Message', backref='user', lazy=True, foreign_keys='Message.user_id')
