@@ -342,8 +342,11 @@ def handle_search(data):
 
             # Search in message content with case-insensitive matching
             messages = Message.query.filter(
-                Message.content.ilike(f'%{keyword}%')
-            ).order_by(Message.timestamp.desc()).limit(50).all()
+                or_(
+                    Message.content.ilike(f'%{keyword}%'),
+                    Thread.content.ilike(f'%{keyword}%')
+                )
+            ).join(Message.threads, isouter=True).order_by(Message.timestamp.desc()).limit(50).all()
 
             logging.info(f"Found {len(messages)} messages matching the search")
 
@@ -375,7 +378,7 @@ def handle_search(data):
                     results.append({
                         'id': message.id,
                         'content': highlighted_content,
-                        'user': message.user.username,
+                        'user': message.user.username if message.user else 'Unknown User',
                         'channel': channel_name,
                         'timestamp': message.timestamp.isoformat(),
                         'user_id': message.user_id
