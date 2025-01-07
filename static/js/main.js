@@ -390,4 +390,60 @@ document.addEventListener('DOMContentLoaded', function() {
             showUserStatusPopup(e, userData);
         }
     });
+
+    // Add these event handlers at the end of the DOMContentLoaded event listener
+    // Status Modal Handling
+    const statusModal = document.getElementById('statusModal');
+    const statusText = document.getElementById('statusText');
+    const updateStatusBtn = document.getElementById('updateStatusBtn');
+    let selectedEmoji = '';
+
+    if (statusModal) {
+        // Handle emoji selection
+        statusModal.addEventListener('click', (e) => {
+            const emojiOption = e.target.closest('.emoji-option');
+            if (emojiOption) {
+                // Remove previous selection
+                document.querySelectorAll('.emoji-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+                // Select new emoji
+                emojiOption.classList.add('selected');
+                selectedEmoji = emojiOption.dataset.emoji;
+            }
+        });
+
+        // Handle status update
+        updateStatusBtn.addEventListener('click', () => {
+            const status = statusText.value.trim();
+            socket.emit('update_custom_status', {
+                status: status,
+                emoji: selectedEmoji
+            });
+
+            // Close modal
+            bootstrap.Modal.getInstance(statusModal).hide();
+
+            // Reset form
+            statusText.value = '';
+            selectedEmoji = '';
+            document.querySelectorAll('.emoji-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        });
+    }
+
+    // Handle status updates from server
+    socket.on('user_status_updated', (data) => {
+        // Update status button if it's the current user
+        if (data.user_id === currentUserId) {
+            const statusBtn = document.querySelector('[data-bs-target="#statusModal"]');
+            if (statusBtn) {
+                statusBtn.innerHTML = `
+                    <span class="status-dot ${data.is_online ? 'online' : 'offline'}"></span>
+                    ${data.status_emoji || ''} ${data.custom_status || 'Set status'}
+                `;
+            }
+        }
+    });
 });

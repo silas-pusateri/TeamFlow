@@ -605,3 +605,44 @@ body {
 .dark-theme .stat-item {
     background-color: rgba(255, 255, 255, 0.05);
 }
+
+/* Status Modal Styles */
+.emoji-selector {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+}
+
+.emoji-option {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+}
+
+.emoji-option:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.emoji-option.selected {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.dark-theme .emoji-option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Status button in navbar */
+.navbar .btn-outline-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar .status-dot {
+    width: 8px;
+    height: 8px;
+    margin: 0;
+}
