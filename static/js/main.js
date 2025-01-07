@@ -15,7 +15,6 @@ window.switchChannel = function(channelId) {
     window.currentChannel = channelId;
     socket.emit('join', { channel: channelId });
     socket.emit('get_channel_info', { channel_id: channelId });
-    socket.emit('get_pinned_messages', { channel: channelId }); // Added line
 
     // Reset reply state when switching channels
     if (typeof window.cancelReply === 'function') {
@@ -168,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentChannel = channelId;
         socket.emit('join', { channel: channelId });
         socket.emit('get_channel_info', { channel_id: channelId });
-        socket.emit('get_pinned_messages', { channel: channelId }); // Added line
 
         // Reset reply state when switching channels
         cancelReply();
@@ -554,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const channelFilter = document.getElementById('searchChannelFilter');
         if (channelFilter) {
             channelFilter.innerHTML = '<option value="">All Channels</option>' +
-                data.channels.map(channel =>
+                data.channels.map(channel => 
                     `<option value="${channel.id}">${channel.name}</option>`
                 ).join('');
         }
@@ -620,129 +618,94 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-// Handle pinned messages display
-    socket.on('pinned_messages', (data) => {
-        const pinnedMessagesList = document.querySelector('.pinned-messages-list');
-        if (pinnedMessagesList) {
-            if (data.messages.length === 0) {
-                pinnedMessagesList.innerHTML = '<p class="text-muted">No pinned messages</p>';
-                document.getElementById('pinnedMessages').classList.remove('show');
-            } else {
-                pinnedMessagesList.innerHTML = data.messages.map(msg => `
-                    <div class="pinned-message" onclick="scrollToMessage('${msg.id}')">
-                        <i class="feather-pin"></i>
-                        <div class="pinned-message-content">
-                            <div class="pinned-message-header">
-                                <span class="username">${msg.user}</span>
-                                <span class="timestamp">${new Date(msg.timestamp).toLocaleString()}</span>
-                            </div>
-                            <div class="message-preview">${msg.content}</div>
-                        </div>
-                    </div>
-                `).join('');
-                document.getElementById('pinnedMessages').classList.add('show');
-            }
-        }
+// Message context menu functions - global scope
+window.toggleMessageMenu = function(event, messageId) {
+    event.stopPropagation();
+    const menu = document.getElementById(`menu-${messageId}`);
+
+    // Close all other menus
+    document.querySelectorAll('.message-menu.active').forEach(m => {
+        if (m !== menu) m.classList.remove('active');
     });
 
-// Function to scroll to a specific message
-    window.scrollToMessage = function(messageId) {
-        const message = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (message) {
-            message.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            message.classList.add('highlight');
-            setTimeout(() => message.classList.remove('highlight'), 2000);
-        }
+    menu.classList.toggle('active');
+};
+
+window.copyMessageContent = function(messageId) {
+    const message = document.querySelector(`[data-message-id="${messageId}"]`);
+    const content = message.querySelector('.message-content').textContent;
+    navigator.clipboard.writeText(content);
+};
+
+window.copyMessageLink = function(messageId) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?message=${messageId}`;
+    navigator.clipboard.writeText(link);
+};
+
+window.showDeleteConfirmation = function(messageId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    const checkbox = document.getElementById('deleteConfirmCheckbox');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+
+    // Reset checkbox and button state
+    checkbox.checked = false;
+    deleteBtn.disabled = true;
+
+    // Handle checkbox change
+    checkbox.onchange = function() {
+        deleteBtn.disabled = !this.checked;
     };
 
-// Message context menu functions - global scope
-    window.toggleMessageMenu = function(event, messageId) {
-        event.stopPropagation();
-        const menu = document.getElementById(`menu-${messageId}`);
-
-        // Close all other menus
-        document.querySelectorAll('.message-menu.active').forEach(m => {
-            if (m !== menu) m.classList.remove('active');
-        });
-
-        menu.classList.toggle('active');
+    // Handle delete confirmation
+    deleteBtn.onclick = function() {
+        socket.emit('delete_message', { message_id: messageId });
+        modal.hide();
     };
 
-    window.copyMessageContent = function(messageId) {
-        const message = document.querySelector(`[data-message-id="${messageId}"]`);
-        const content = message.querySelector('.message-content').textContent;
-        navigator.clipboard.writeText(content);
-    };
-
-    window.copyMessageLink = function(messageId) {
-        const baseUrl = window.location.origin + window.location.pathname;
-        const link = `${baseUrl}?message=${messageId}`;
-        navigator.clipboard.writeText(link);
-    };
-
-    window.showDeleteConfirmation = function(messageId) {
-        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
-        const checkbox = document.getElementById('deleteConfirmCheckbox');
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-
-        // Reset checkbox and button state
-        checkbox.checked = false;
-        deleteBtn.disabled = true;
-
-        // Handle checkbox change
-        checkbox.onchange = function() {
-            deleteBtn.disabled = !this.checked;
-        };
-
-        // Handle delete confirmation
-        deleteBtn.onclick = function() {
-            socket.emit('delete_message', { message_id: messageId });
-            modal.hide();
-        };
-
-        modal.show();
-    };
+    modal.show();
+};
 
 // Handle message deletion response
-    socket.on('message_deleted', function(data) {
-        const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-        if (messageElement) {
-            messageElement.remove();
-        }
-    });
+socket.on('message_deleted', function(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (messageElement) {
+        messageElement.remove();
+    }
+});
 
 // Close menus when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.message-menu') && !e.target.closest('.message-menu-btn')) {
-            document.querySelectorAll('.message-menu.active').forEach(menu => {
-                menu.classList.remove('active');
-            });
-        }
-    });
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.message-menu') && !e.target.closest('.message-menu-btn')) {
+        document.querySelectorAll('.message-menu.active').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
 
-    socket.on('search_results', (data) => {
-        if (searchResults) {
-            if (data.results.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="p-4 text-center">
-                        <p>No messages found matching your search.</p>
+socket.on('search_results', (data) => {
+    if (searchResults) {
+        if (data.results.length === 0) {
+            searchResults.innerHTML = `
+                <div class="p-4 text-center">
+                    <p>No messages found matching your search.</p>
+                </div>
+            `;
+        } else {
+            searchResults.innerHTML = data.results.map(result => `
+                <div class="search-result-item">
+                    <div class="search-result-header">
+                        <span class="search-result-channel"># ${result.channel}</span>
+                        <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
                     </div>
-                `;
-            } else {
-                searchResults.innerHTML = data.results.map(result => `
-                    <div class="search-result-item">
-                        <div class="search-result-header">
-                            <span class="search-result-channel"># ${result.channel}</span>
-                            <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div class="search-result-content">${result.content}</div>
-                        <div class="search-result-user">
-                            <span class="username" data-user-id="${result.user_id}">${result.user}</span>
-                        </div>
+                    <div class="search-result-content">${result.content}</div>
+                    <div class="search-result-user">
+                        <span class="username" data-user-id="${result.user_id}">${result.user}</span>
                     </div>
-                `).join('');
-            }
-            searchResultsModal.show();
+                </div>
+            `).join('');
         }
-    });
+        searchResultsModal.show();
+    }
+});
 });

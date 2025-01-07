@@ -66,19 +66,12 @@ function createMessageHTML(data, reactionGroups) {
                 <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
                 <div class="message-menu" id="menu-${data.id}">
                     <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
-                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
-                    <div class="menu-item" onclick="togglePin('${data.id}')">
-                        ${data.is_pinned ? 'Unpin message' : 'Pin message'}
-                    </div>
-                    <div class="menu-item" onclick="toggleBookmark('${data.id}')">
-                        ${data.is_bookmarked ? 'Remove bookmark' : 'Bookmark message'}
-                    </div>
-                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
                 </div>
             </div>
         </div>
         <div class="message-content">${data.content}</div>
-        ${data.is_bookmarked ? '<div class="bookmarked-indicator">🔖</div>' : ''}
         <div class="message-hover-actions">
             <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
                 <i class="feather-smile"></i>
@@ -87,18 +80,6 @@ function createMessageHTML(data, reactionGroups) {
             <button class="hover-action-btn reply-btn" title="Reply in thread">
                 <i class="feather-message-square"></i>
                 Reply
-            </button>
-            <button class="hover-action-btn pin-btn ${data.is_pinned ? 'active' : ''}" 
-                    onclick="togglePin('${data.id}')" 
-                    title="${data.is_pinned ? `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` : 'Pin message'}">
-                <i class="feather-pin"></i>
-                ${data.is_pinned ? 'Pinned' : 'Pin'}
-            </button>
-            <button class="hover-action-btn bookmark-btn ${data.is_bookmarked ? 'active' : ''}" 
-                    onclick="toggleBookmark('${data.id}')" 
-                    title="${data.is_bookmarked ? 'Remove bookmark' : 'Bookmark message'}">
-                <i class="feather-bookmark"></i>
-                ${data.is_bookmarked ? 'Bookmarked' : 'Bookmark'}
             </button>
         </div>
         <div class="reactions" data-message-id="${data.id}">
@@ -323,20 +304,10 @@ socket.on('message_pinned', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
     if (message) {
         const pinButton = message.querySelector('.pin-btn');
-        const menuPinOption = document.querySelector(`#menu-${data.message_id} .menu-item:nth-child(3)`);
-
         pinButton.classList.toggle('active', data.is_pinned);
         pinButton.title = data.is_pinned ? 
             `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` :
             'Pin message';
-        pinButton.innerHTML = `
-            <i class="feather-pin"></i>
-            ${data.is_pinned ? 'Pinned' : 'Pin'}
-        `;
-
-        if (menuPinOption) {
-            menuPinOption.textContent = data.is_pinned ? 'Unpin message' : 'Pin message';
-        }
     }
 });
 
@@ -344,29 +315,7 @@ socket.on('message_bookmarked', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
     if (message) {
         const bookmarkButton = message.querySelector('.bookmark-btn');
-        const menuBookmarkOption = document.querySelector(`#menu-${data.message_id} .menu-item:nth-child(4)`);
-        const bookmarkIndicator = message.querySelector('.bookmarked-indicator');
-
         bookmarkButton.classList.toggle('active', data.is_bookmarked);
-        bookmarkButton.innerHTML = `
-            <i class="feather-bookmark"></i>
-            ${data.is_bookmarked ? 'Bookmarked' : 'Bookmark'}
-        `;
-
-        if (menuBookmarkOption) {
-            menuBookmarkOption.textContent = data.is_bookmarked ? 'Remove bookmark' : 'Bookmark message';
-        }
-
-        if (data.is_bookmarked) {
-            if (!bookmarkIndicator) {
-                const indicator = document.createElement('div');
-                indicator.className = 'bookmarked-indicator';
-                indicator.textContent = '🔖';
-                message.appendChild(indicator);
-            }
-        } else if (bookmarkIndicator) {
-            bookmarkIndicator.remove();
-        }
     }
 });
 
@@ -411,13 +360,3 @@ function parseChannelReferences(content) {
         return match;
     });
 }
-
-// Add pin toggling functionality
-window.togglePin = function(messageId) {
-    socket.emit('pin_message', { message_id: messageId });
-};
-
-// Add bookmark toggling functionality
-window.toggleBookmark = function(messageId) {
-    socket.emit('bookmark_message', { message_id: messageId });
-};
