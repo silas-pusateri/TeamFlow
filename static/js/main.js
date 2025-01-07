@@ -555,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
     modalSearchInput.addEventListener('input', () => {
         searchInput.value = modalSearchInput.value;
     });
-    
+
     modalSearchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -567,12 +567,12 @@ document.addEventListener('DOMContentLoaded', function() {
 window.toggleMessageMenu = function(event, messageId) {
     event.stopPropagation();
     const menu = document.getElementById(`menu-${messageId}`);
-    
+
     // Close all other menus
     document.querySelectorAll('.message-menu.active').forEach(m => {
         if (m !== menu) m.classList.remove('active');
     });
-    
+
     menu.classList.toggle('active');
 };
 
@@ -592,22 +592,22 @@ window.showDeleteConfirmation = function(messageId) {
     const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
     const checkbox = document.getElementById('deleteConfirmCheckbox');
     const deleteBtn = document.getElementById('confirmDeleteBtn');
-    
+
     // Reset checkbox and button state
     checkbox.checked = false;
     deleteBtn.disabled = true;
-    
+
     // Handle checkbox change
     checkbox.onchange = function() {
         deleteBtn.disabled = !this.checked;
     };
-    
+
     // Handle delete confirmation
     deleteBtn.onclick = function() {
         socket.emit('delete_message', { message_id: messageId });
         modal.hide();
     };
-    
+
     modal.show();
 };
 

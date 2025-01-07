@@ -309,22 +309,14 @@ socket.on('channel_info', (data) => {
 function parseChannelReferences(content) {
     const channelRegex = /\#([a-zA-Z0-9_-]+)/g;
     return content.replace(channelRegex, (match, channelName) => {
-        return `<a href="#" class="channel-reference" onclick="window.handleChannelReference('${channelName}'); return false;">#${channelName}</a>`;
+        const channelList = document.getElementById('channel-list');
+        const channels = Array.from(channelList.getElementsByClassName('channel-item'));
+        const channel = channels.find(ch => ch.textContent.trim().substring(2) === channelName);
+        
+        if (channel) {
+            const channelId = channel.dataset.channelId;
+            return `<a href="#" class="channel-reference" onclick="window.switchChannel('${channelId}'); return false;">#${channelName}</a>`;
+        }
+        return match;
     });
 }
-
-// Handle channel reference clicks
-window.handleChannelReference = function(channelName) {
-    const channelList = document.getElementById('channel-list');
-    const channels = channelList.getElementsByClassName('channel-item');
-    
-    for (let channel of channels) {
-        if (channel.textContent.trim().substring(2) === channelName) {
-            const channelId = channel.dataset.channelId;
-            if (typeof window.switchChannel === 'function') {
-                window.switchChannel(channelId);
-            }
-            break;
-        }
-    }
-};
