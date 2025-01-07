@@ -115,33 +115,39 @@ function createThreadMessageHTML(thread) {
     });
 
     return `
-        <div class="thread-message" data-message-id="${thread.id}">
-            <div class="message-header">
-                <span class="username">${thread.user}</span>
+        <div class="message-header">
+            <span class="username">${thread.user}</span>
+            <div class="message-actions">
                 <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
+                <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${thread.id}')">⋮</button>
+                <div id="menu-${thread.id}" class="message-menu">
+                    <div class="menu-item" onclick="copyMessageContent('${thread.id}')">Copy message</div>
+                    <div class="menu-item" onclick="copyMessageLink('${thread.id}')">Copy link</div>
+                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${thread.id}')">Delete message</div>
+                </div>
             </div>
-            <div class="message-content">${thread.content}</div>
-            <div class="message-hover-actions">
-                <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
-                    <i class="feather-smile"></i>
-                    React
-                </button>
-                <button class="hover-action-btn reply-btn" title="Reply in thread">
-                    <i class="feather-message-square"></i>
-                    Reply
-                </button>
-            </div>
-            <div class="reactions" data-message-id="${thread.id}">
-                ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
-                    <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
-                          data-emoji="${emoji}"
-                          data-message-id="${thread.id}"
-                          title="${usernames.join(', ')}">
-                        ${emoji}
-                        <span class="reaction-count">${count}</span>
-                    </span>
-                `).join('')}
-            </div>
+        </div>
+        <div class="message-content">${thread.content}</div>
+        <div class="message-hover-actions">
+            <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
+                <i class="feather-smile"></i>
+                React
+            </button>
+            <button class="hover-action-btn reply-btn" title="Reply in thread">
+                <i class="feather-message-square"></i>
+                Reply
+            </button>
+        </div>
+        <div class="reactions" data-message-id="${thread.id}">
+            ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
+                <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
+                      data-emoji="${emoji}"
+                      data-message-id="${thread.id}"
+                      title="${usernames.join(', ')}">
+                    ${emoji}
+                    <span class="reaction-count">${count}</span>
+                </span>
+            `).join('')}
         </div>
     `;
 }
@@ -164,28 +170,6 @@ socket.on('thread_message', (data) => {
         }
 
         const threadMessage = document.createElement('div');
-        threadMessage.classList.add('thread-message');
-        threadMessage.dataset.messageId = data.id;
-        threadMessage.innerHTML = `
-            <div class="message-header">
-                <span class="username">${data.user}</span>
-                <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
-            </div>
-            <div class="message-content">${data.content}</div>
-            <div class="message-actions">
-                <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
-                <div id="menu-${data.id}" class="message-menu">
-                    <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
-                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
-                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
-                </div>
-            </div>
-            <div class="message-hover-actions">
-                <button class="hover-action-btn reaction-btn">😊 React</button>
-                <button class="hover-action-btn reply-btn">↩️ Reply</button>
-            </div>
-            <div class="reactions"></div>
-        `;
         threadMessage.classList.add('thread-message');
         threadMessage.dataset.messageId = data.id;
         threadMessage.innerHTML = createThreadMessageHTML(data);
