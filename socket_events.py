@@ -209,24 +209,36 @@ def handle_reaction(data):
 def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
+            parent_id = data['parent_id']
+            
+            # Check if replying to a thread message
+            parent_thread = Thread.query.get(parent_id)
+            if parent_thread:
+                # If replying to a thread, use the original message as parent
+                parent_id = parent_thread.message_id
+            
             # Create and save thread message
             thread = Thread(
-                message_id=data['parent_id'],
+                message_id=parent_id,  # Use original message ID
                 content=data['content'],
                 user_id=current_user.id
             )
             db.session.add(thread)
             db.session.commit()
 
+            # Get parent message for channel info
+            parent_message = Message.query.get(parent_id)
+            
             # Broadcast thread message
             thread_data = {
                 'id': thread.id,
                 'content': thread.content,
                 'user': current_user.username,
-                'parent_id': data['parent_id'],
-                'timestamp': thread.timestamp.isoformat()
+                'parent_id': parent_id,
+                'timestamp': thread.timestamp.isoformat(),
+                'channel_id': parent_message.channel_id if parent_message else data['channel_id']
             }
-            emit('thread_message', thread_data, room=data['channel_id'])
+            emit('thread_message', thread_data, room=thread_data['channel_id'])
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")

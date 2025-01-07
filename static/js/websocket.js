@@ -163,14 +163,15 @@ function createThreadMessageHTML(thread) {
 }
 
 socket.on('thread_message', (data) => {
-    const parentMessage = document.querySelector(`[data-message-id="${data.parent_id}"]`);
-    if (parentMessage) {
-        let threadContainer = parentMessage.querySelector('.thread-container');
-        if (!threadContainer) {
-            threadContainer = document.createElement('div');
-            threadContainer.className = 'thread-container';
-            parentMessage.appendChild(threadContainer);
-        }
+    const parentMessage = document.querySelector(`.message[data-message-id="${data.parent_id}"]`);
+    if (!parentMessage) return;
+
+    let threadContainer = parentMessage.querySelector('.thread-container');
+    if (!threadContainer) {
+        threadContainer = document.createElement('div');
+        threadContainer.className = 'thread-container';
+        parentMessage.appendChild(threadContainer);
+    }
         
         threadContainer.classList.add('active');
         const threadMessage = document.createElement('div');

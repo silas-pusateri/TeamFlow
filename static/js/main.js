@@ -190,10 +190,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (e.target.classList.contains('reaction-btn')) {
             showEmojiPicker(messageId, e.target.getBoundingClientRect());
-        } else if (e.target.classList.contains('reply-btn')) {
+        } else if (e.target.closest('.reply-btn')) {
             const username = messageElement.querySelector('.username').textContent;
             const content = messageElement.querySelector('.message-content').textContent;
-            setReplyContext(messageId, username, content);
+            const messageId = messageElement.dataset.messageId;
+            const parentMessage = messageElement.closest('.message');
+            // If replying in a thread, use the parent message's ID
+            const actualParentId = parentMessage ? parentMessage.dataset.messageId : messageId;
+            setReplyContext(actualParentId, username, content);
         }
     });
 
@@ -705,4 +709,5 @@ socket.on('search_results', (data) => {
             searchResultsModal.show();
         }
     });
+});
 });
