@@ -562,8 +562,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    });
-
 // Message context menu functions - global scope
 window.toggleMessageMenu = function(event, messageId) {
     event.stopPropagation();
