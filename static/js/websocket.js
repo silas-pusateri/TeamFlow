@@ -1,3 +1,68 @@
+const socket = io();
+
+// Message reactions
+socket.on('message_pinned', (data) => {
+    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (message) {
+        const pinButton = message.querySelector('.pin-btn');
+        pinButton.classList.toggle('active', data.is_pinned);
+        pinButton.title = data.is_pinned ? 
+            `Pinned by ${data.pinned_by} on ${new Date(data.pinned_at).toLocaleString()}` :
+            'Pin message';
+    }
+});
+
+socket.on('message_bookmarked', (data) => {
+    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (message) {
+        const bookmarkButton = message.querySelector('.bookmark-btn');
+        bookmarkButton.classList.toggle('active', data.is_bookmarked);
+    }
+});
+
+// Thread management
+function updateThreadCount(parentMessage) {
+    const threadContainer = parentMessage.querySelector('.thread-container');
+    if (!threadContainer) return;
+
+    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
+    let countDisplay = parentMessage.querySelector('.thread-count');
+
+    if (!countDisplay) {
+        countDisplay = document.createElement('div');
+        countDisplay.className = 'thread-count';
+        parentMessage.querySelector('.message-content').appendChild(countDisplay);
+    }
+
+    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
+    countDisplay.style.display = threadCount > 0 ? 'block' : 'none';
+}
+
+// Reply context handling
+function setReplyContext(messageId, content, username) {
+    const replyContext = document.querySelector('.reply-context');
+    if (replyContext) {
+        replyContext.style.display = 'flex';
+        replyContext.querySelector('.reply-preview').textContent = content;
+        replyContext.querySelector('.reply-label').textContent = `Replying to ${username}`;
+    }
+}
+
+function clearReplyContext() {
+    const replyContext = document.querySelector('.reply-context');
+    if (replyContext) {
+        replyContext.style.display = 'none';
+    }
+}
+
+// Emoji picker handling
+function showEmojiPicker(messageId) {
+    const picker = document.querySelector(`[data-emoji-picker="${messageId}"]`);
+    if (picker) {
+        picker.classList.toggle('show');
+    }
+}
+
 let socket = io({
     reconnection: true,
     reconnectionAttempts: 5,
@@ -103,20 +168,6 @@ function createMessageHTML(data, reactionGroups) {
     `;
 }
 
-function updateThreadCount(parentMessage) {
-    const threadContainer = parentMessage.querySelector('.thread-container');
-    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
-
-    let countDisplay = parentMessage.querySelector('.thread-count');
-    if (!countDisplay) {
-        countDisplay = document.createElement('div');
-        countDisplay.className = 'thread-count';
-        parentMessage.querySelector('.message-content').appendChild(countDisplay);
-    }
-
-    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
-    countDisplay.style.display = 'block';
-}
 
 function createThreadMessageHTML(thread) {
     const threadReactions = thread.reactions || [];
@@ -217,24 +268,6 @@ socket.on('thread_message', (data) => {
     updateThreadCount(parentMessage);
 });
 
-function updateThreadCount(parentMessage) {
-    const threadContainer = parentMessage.querySelector('.thread-container');
-    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
-    let countDisplay = parentMessage.querySelector('.thread-count');
-    
-    if (!countDisplay) {
-        countDisplay = document.createElement('div');
-        countDisplay.className = 'thread-count';
-        const messageContent = parentMessage.querySelector('.message-content');
-        if (messageContent) {
-            messageContent.appendChild(countDisplay);
-        }
-    }
-    
-    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
-    countDisplay.style.display = 'block';
-}
-
 socket.on('reaction_added', (data) => {
     const selector = data.is_thread ? '.thread-message' : '.message';
     const message = document.querySelector(`${selector}[data-message-id="${data.message_id}"]`);
@@ -331,6 +364,7 @@ document.addEventListener('click', (e) => {
 socket.on('status_change', (data) => {
     updateUserStatus(data);
 });
+
 
 socket.on('message_pinned', (data) => {
     const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
