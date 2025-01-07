@@ -321,3 +321,14 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+function handleMessageClick(messageId) {
+    window.location.href = `/message/${messageId}`;
+}
+
+// Add click event listener to messages
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.message')) {
+        const messageId = e.target.closest('.message').dataset.messageId;
+        handleMessageClick(messageId);
+    }
+});

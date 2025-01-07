@@ -946,3 +946,43 @@ body {
     text-decoration: underline;
     opacity: 0.8;
 }
+.message-detail-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.message-detail {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.message-detail .message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.message-detail .channel-info {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.message-detail .message-content {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.message-detail .message-threads {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.message-detail .thread-message {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}

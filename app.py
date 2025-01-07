@@ -70,3 +70,9 @@ def index():
 def chat():
     channels = Channel.query.all()
     return render_template('chat.html', channels=channels)
+
+@app.route('/message/<int:message_id>')
+@login_required
+def message_detail(message_id):
+    message = Message.query.get_or_404(message_id)
+    return render_template('message_detail.html', message=message)

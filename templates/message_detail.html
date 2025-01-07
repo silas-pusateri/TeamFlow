@@ -1,0 +1,41 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="message-detail-container">
+    <div class="message-detail">
+        <div class="message-header">
+            <div class="user-info">
+                <span class="username">{{ message.user.username }}</span>
+                <span class="timestamp">{{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+            </div>
+            <div class="channel-info">
+                in #{{ message.channel.name }}
+            </div>
+        </div>
+        <div class="message-content">
+            {{ message.content }}
+        </div>
+        <div class="message-reactions">
+            {% for reaction in message.reactions %}
+            <span class="reaction">
+                {{ reaction.emoji }} 
+                <span class="reaction-count">{{ reaction.user.username }}</span>
+            </span>
+            {% endfor %}
+        </div>
+        {% if message.threads %}
+        <div class="message-threads">
+            <h4>Thread Replies</h4>
+            {% for thread in message.threads %}
+            <div class="thread-message">
+                <span class="username">{{ thread.user.username }}</span>
+                <span class="timestamp">{{ thread.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                <div class="content">{{ thread.content }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
