@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function sendMessage() {
+        const messageInput = document.getElementById('message-input');
         const content = messageInput.value.trim();
         if (content && currentChannel) {
             const messageData = {
@@ -128,12 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 channel_id: currentChannel
             };
 
-            if (replyingTo) {
-                messageData.parent_id = replyingTo.messageId;
+            if (window.replyingTo) {
+                messageData.parent_id = window.replyingTo.messageId;
                 socket.emit('thread_reply', messageData);
 
                 // Update thread container immediately
-                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
+                const parentMessage = document.querySelector(`[data-message-id="${window.replyingTo.messageId}"]`);
                 if (parentMessage) {
                     let threadContainer = parentMessage.querySelector('.thread-container');
                     if (!threadContainer) {
@@ -148,37 +149,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             messageInput.value = '';
-            cancelReply();
-        }
-    }
-
-    window.switchChannel = function(channelId) {
-        if (currentChannel) {
-            socket.emit('leave', { channel: currentChannel });
-        }
-
-        // Clear messages before joining new channel
-        messageContainer.innerHTML = `
-            <div class="no-messages-placeholder">
-                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
-            </div>
-        `;
-
-        currentChannel = channelId;
-        socket.emit('join', { channel: channelId });
-        socket.emit('get_channel_info', { channel_id: channelId });
-
-        // Reset reply state when switching channels
-        cancelReply();
-
-        // Highlight selected channel
-        document.querySelectorAll('.channel-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.dataset.channelId === channelId) {
-                item.classList.add('active');
+            if (typeof window.cancelReply === 'function') {
+                window.cancelReply();
             }
-        });
+        }
     }
+
+    window.setReplyContext = function(messageId, username, content) {
+        const replyContext = document.querySelector('.reply-context');
+        const messageInput = document.getElementById('message-input');
+
+        // Store reply information in window scope
+        window.replyingTo = { messageId, username, content };
+
+        if (replyContext) {
+            replyContext.style.display = 'flex';
+            replyContext.innerHTML = `
+                <div class="reply-info">
+                    <span class="reply-label">Replying to ${username}</span>
+                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+                </div>
+                <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+            `;
+            messageInput.focus();
+        }
+    };
+
+    window.cancelReply = function() {
+        const replyContext = document.querySelector('.reply-context');
+        window.replyingTo = null;
+        if (replyContext) {
+            replyContext.style.display = 'none';
+        }
+    };
 
     // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {
@@ -200,30 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    window.setReplyContext = function(messageId, username, content) {
-        const replyContext = document.querySelector('.reply-context');
-        const messageInput = document.getElementById('message-input');
-        window.replyingTo = { messageId, username, content };
-
-        if (replyContext) {
-            replyContext.style.display = 'flex';
-            replyContext.innerHTML = `
-                <div class="reply-info">
-                    <span class="reply-label">Replying to ${username}</span>
-                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
-                </div>
-                <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
-            `;
-            messageInput.focus();
-        }
-    };
-
-    function cancelReply() {
-        replyingTo = null;
-        replyContext.style.display = 'none';
-    }
-
-    window.cancelReply = cancelReply;  // Make it accessible globally for the onclick handler
 
     // Create emoji picker element
     const emojiPicker = document.createElement('div');
@@ -552,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const channelFilter = document.getElementById('searchChannelFilter');
         if (channelFilter) {
             channelFilter.innerHTML = '<option value="">All Channels</option>' +
-                data.channels.map(channel => 
+                data.channels.map(channel =>
                     `<option value="${channel.id}">${channel.name}</option>`
                 ).join('');
         }
