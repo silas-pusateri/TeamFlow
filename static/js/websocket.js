@@ -7,9 +7,11 @@ let socket = io({
 });
 let currentUserId = null;
 
-socket.on('connect', () => {
-    console.log('Connected to WebSocket');
-    socket.emit('get_current_user');
+document.addEventListener('DOMContentLoaded', () => {
+    socket.on('connect', () => {
+        console.log('Connected to WebSocket');
+        socket.emit('get_current_user');
+    });
 });
 
 socket.on('disconnect', () => {
@@ -388,7 +390,7 @@ socket.on('channel_info', (data) => {
     if (ownerSpan) {
         ownerSpan.textContent = `Created by ${data.creator}`;
         ownerSpan.dataset.userId = data.creator_id;
-        header.querySelector('.message-count').textContent = `${data.message_count} messages`;
+        if (messageCount) messageCount.textContent = `${data.message_count} messages`;
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
 });
