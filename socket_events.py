@@ -32,22 +32,27 @@ def handle_join(data):
 
         # Load messages from database with proper error handling
         try:
-            # Get last 50 messages for the channel
+            # Get all messages for the channel, ordered by timestamp
             messages = Message.query.filter_by(channel_id=room)\
-                .order_by(Message.timestamp.desc())\
-                .limit(50)\
+                .order_by(Message.timestamp.asc())\
                 .all()
 
-            for message in reversed(messages):
-                message_data = create_message_data(message)
-                if message_data:
-                    emit('message', message_data)
+            # Send messages in batches to avoid overwhelming the socket
+            batch_size = 100
+            for i in range(0, len(messages), batch_size):
+                batch = messages[i:i + batch_size]
+                for message in batch:
+                    message_data = create_message_data(message)
+                    if message_data:
+                        emit('message', message_data)
 
         except Exception as e:
             logging.error(f"Error loading messages for channel {room}: {str(e)}")
+            db.session.rollback()
 
     except Exception as e:
         logging.error(f"Error in handle_join: {str(e)}")
+        db.session.rollback()
 
 def create_message_data(message):
     """Helper function to create message data dictionary with proper error handling"""
