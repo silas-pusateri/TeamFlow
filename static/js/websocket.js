@@ -95,6 +95,11 @@ function createMessageHTML(data, reactionGroups) {
                 <i class="feather-message-square"></i>
                 Reply
             </button>
+            ${data.attachment_path ? `
+            <a href="/static/uploads/${data.attachment_name}" target="_blank" class="hover-action-btn" title="View file">
+                <i class="feather-file"></i>
+                View File
+            </a>` : ''}
         </div>
         <div class="reactions" data-message-id="${data.id}">
             ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `

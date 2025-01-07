@@ -216,6 +216,18 @@ body {
     transition: all 0.2s ease;
 }
 
+.hover-action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: inherit;
+}
+
+a.hover-action-btn {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
 .dark-theme .hover-action-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
