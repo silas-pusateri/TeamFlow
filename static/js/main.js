@@ -654,4 +654,3 @@ socket.on('search_results', (data) => {
         }
     });
 });
-});
