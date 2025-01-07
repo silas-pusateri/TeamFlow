@@ -31,6 +31,7 @@ window.switchChannel = function(channelId) {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
+    const socket = io();
     const messageContainer = document.getElementById('message-container');
     const messageInput = document.getElementById('message-input');
     const channelList = document.getElementById('channel-list');
@@ -709,5 +710,4 @@ socket.on('search_results', (data) => {
             searchResultsModal.show();
         }
     });
-});
 });
