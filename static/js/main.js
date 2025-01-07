@@ -77,15 +77,6 @@ window.switchChannel = function(channelId) {
     if (window.currentChannel) {
         socket.emit('leave', { channel: window.currentChannel });
     }
-    
-    // Show delete button when channel is selected
-    const deleteBtn = document.getElementById('deleteChannelBtn');
-    deleteBtn.style.display = 'block';
-    deleteBtn.onclick = () => {
-        if (confirm('Are you sure you want to delete this channel? This action cannot be undone.')) {
-            socket.emit('delete_channel', { channel_id: channelId });
-        }
-    };
 
     const messageContainer = document.getElementById('message-container');
     messageContainer.innerHTML = `
@@ -170,25 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
         channelItem.dataset.channelId = data.id;
         channelItem.textContent = `# ${data.name}`;
         channelList.appendChild(channelItem);
-    });
-
-    socket.on('channel_deleted', (data) => {
-        const channelItem = document.querySelector(`[data-channel-id="${data.channel_id}"]`);
-        if (channelItem) {
-            channelItem.remove();
-        }
-        if (window.currentChannel === data.channel_id) {
-            // Switch to first available channel or clear view
-            const firstChannel = document.querySelector('.channel-item');
-            if (firstChannel) {
-                switchChannel(firstChannel.dataset.channelId);
-            } else {
-                document.getElementById('message-container').innerHTML = '';
-                document.querySelector('.channel-name').textContent = '';
-                document.querySelector('.channel-description').textContent = '';
-                document.querySelector('.channel-metrics').innerHTML = '';
-            }
-        }
     });
 
 
