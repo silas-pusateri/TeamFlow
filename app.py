@@ -35,8 +35,7 @@ with app.app_context():
     # Import models before creating tables
     from models import User, Channel, Message, Thread, Reaction, UserBookmark
 
-    # Drop all tables and recreate them with the new schema
-    db.drop_all()
+    # Only create tables if they don't exist
     db.create_all()
 
     # Create default channel if it doesn't exist
