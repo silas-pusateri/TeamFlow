@@ -76,21 +76,6 @@ def create_message_data(message):
             'user': reaction.user.username if reaction.user else 'Unknown'
         } for reaction in message.reactions]
 
-        # Get thread messages
-        threads = []
-        thread_messages = Thread.query.filter_by(message_id=message.id)\
-            .order_by(Thread.timestamp)\
-            .all()
-
-        for thread in thread_messages:
-            thread_data = {
-                'id': thread.id,
-                'content': thread.content,
-                'user': thread.user.username if thread.user else 'Unknown',
-                'timestamp': thread.timestamp.isoformat()
-            }
-            threads.append(thread_data)
-
         # Get replies (nested messages)
         replies = []
         if message.replies:
@@ -99,7 +84,13 @@ def create_message_data(message):
                     'id': reply.id,
                     'content': reply.content,
                     'user': reply.user.username if reply.user else 'Unknown',
-                    'timestamp': reply.timestamp.isoformat()
+                    'timestamp': reply.timestamp.isoformat(),
+                    'thread_depth': reply.thread_depth,  # Add thread depth for UI
+                    'reactions': [{
+                        'emoji': r.emoji,
+                        'user_id': r.user_id,
+                        'user': r.user.username if r.user else 'Unknown'
+                    } for r in reply.reactions]
                 }
                 replies.append(reply_data)
 
@@ -112,9 +103,9 @@ def create_message_data(message):
             'pinned_by': message.pinned_by.username if message.pinned_by else None,
             'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
             'reactions': reactions,
-            'threads': threads,
             'replies': replies,
-            'parent_id': message.parent_id
+            'parent_id': message.parent_id,
+            'thread_depth': message.thread_depth  # Add thread depth for UI
         }
     except Exception as e:
         logging.error(f"Error creating message data for message {message.id}: {str(e)}")
@@ -210,35 +201,42 @@ def handle_thread_reply(data):
     if current_user.is_authenticated:
         try:
             parent_id = data['parent_id']
-            
-            # Check if replying to a thread message
-            parent_thread = Thread.query.get(parent_id)
-            if parent_thread:
-                # If replying to a thread, use the original message as parent
-                parent_id = parent_thread.message_id
-            
+
+            # Get the parent message or thread
+            parent_message = Message.query.get(parent_id)
+            if not parent_message:
+                return
+
+            # If replying to a thread message, get the root parent message
+            if parent_message.parent_id is not None:
+                parent_id = parent_message.parent_id
+
             # Create and save thread message
-            thread = Thread(
-                message_id=parent_id,  # Use original message ID
+            message = Message(
                 content=data['content'],
-                user_id=current_user.id
+                user_id=current_user.id,
+                channel_id=parent_message.channel_id,
+                parent_id=parent_id  # Link to the root parent message
             )
-            db.session.add(thread)
+            db.session.add(message)
             db.session.commit()
 
-            # Get parent message for channel info
-            parent_message = Message.query.get(parent_id)
-            
-            # Broadcast thread message
-            thread_data = {
-                'id': thread.id,
-                'content': thread.content,
-                'user': current_user.username,
-                'parent_id': parent_id,
-                'timestamp': thread.timestamp.isoformat(),
-                'channel_id': parent_message.channel_id if parent_message else data['channel_id']
-            }
-            emit('thread_message', thread_data, room=thread_data['channel_id'])
+            # Get channel info from the root parent message
+            root_parent = Message.query.get(parent_id)
+            channel_id = root_parent.channel_id if root_parent else data.get('channel_id')
+
+            # Create message data with proper thread hierarchy
+            message_data = create_message_data(message)
+            if message_data:
+                emit('thread_message', {
+                    'id': message.id,
+                    'content': message.content,
+                    'user': current_user.username,
+                    'parent_id': parent_id,
+                    'timestamp': message.timestamp.isoformat(),
+                    'channel_id': channel_id,
+                    'thread_depth': message.thread_depth  # Add thread depth for UI
+                }, room=channel_id)
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")
