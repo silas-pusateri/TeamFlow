@@ -224,19 +224,6 @@ body {
     font-weight: 500;
 }
 
-/* Dark theme support for reactions */
-.dark-theme .reaction {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark-theme .reaction:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-.dark-theme .reaction.active {
-    background-color: var(--primary-color);
-}
-
 .dark-theme .thread-container {
     background-color: rgba(255, 255, 255, 0.02);
 }
@@ -472,60 +459,4 @@ body {
 
 .dark-theme .auth-container .card-title {
     color: var(--text-color);
-}
-
-/* Add to existing styles */
-
-.reaction-heatmap {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1rem;
-}
-
-.heatmap-header {
-    color: var(--text-color);
-    font-size: 0.9rem;
-    opacity: 0.8;
-}
-
-.reaction-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.5rem;
-    background-color: var(--bg-color);
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.stat-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.stat-emoji {
-    font-size: 1.2rem;
-    margin-bottom: 0.25rem;
-}
-
-.stat-count {
-    font-size: 0.8rem;
-    color: var(--text-color);
-    opacity: 0.8;
-}
-
-/* Dark theme support */
-.dark-theme .stat-item {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark-theme .stat-item:hover {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
