@@ -369,8 +369,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="stat-label">Threads</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value">${userData.stats.bookmarks_count}</div>
-                        <div class="stat-label">Bookmarks</div>
+                        <div class="stat-value">${userData.stats.channels_joined}</div>
+                        <div class="stat-label">Channels</div>
                     </div>
                 </div>
 
