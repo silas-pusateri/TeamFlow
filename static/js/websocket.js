@@ -66,8 +66,8 @@ function createMessageHTML(data, reactionGroups) {
                 <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
                 <div class="message-menu" id="menu-${data.id}">
                     <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
-                <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
-                <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@ function createMessageHTML(data, reactionGroups) {
                 </span>
             `).join('')}
         </div>
-        <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}">
+        <div class="thread-container ${data.threads && data.threads.length > 0 ? 'active' : ''}" data-parent-id="${data.id}">
             ${(data.threads || []).map(thread => createThreadMessageHTML(thread)).join('')}
         </div>
     `;
@@ -163,17 +163,22 @@ function createThreadMessageHTML(thread) {
 }
 
 socket.on('thread_message', (data) => {
+    // Find the parent message using the parent_id from the data
     const parentMessage = document.querySelector(`.message[data-message-id="${data.parent_id}"]`);
     if (!parentMessage) return;
 
+    // Find or create thread container
     let threadContainer = parentMessage.querySelector('.thread-container');
     if (!threadContainer) {
         threadContainer = document.createElement('div');
-        threadContainer.className = 'thread-container';
+        threadContainer.className = 'thread-container active';
+        threadContainer.dataset.parentId = data.parent_id;
         parentMessage.appendChild(threadContainer);
+    } else {
+        threadContainer.classList.add('active');
     }
 
-    threadContainer.classList.add('active');
+    // Create thread message element
     const threadMessage = document.createElement('div');
     threadMessage.classList.add('thread-message');
     threadMessage.dataset.messageId = data.id;
@@ -183,24 +188,12 @@ socket.on('thread_message', (data) => {
     data.content = parseChannelReferences(data.content);
     threadMessage.innerHTML = createThreadMessageHTML(data);
 
+    // Append the thread message to the container
     threadContainer.appendChild(threadMessage);
     threadContainer.scrollTop = threadContainer.scrollHeight;
 
-    // Update thread count
+    // Update thread count in the parent message
     updateThreadCount(parentMessage);
-
-    // Update thread count if it exists
-    const threadCount = parentMessage.querySelector('.thread-count');
-    if (threadCount) {
-        const currentCount = parseInt(threadCount.textContent) || 0;
-        threadCount.textContent = `${currentCount + 1} replies`;
-        threadCount.style.display = 'block';
-    } else {
-        const countDisplay = document.createElement('div');
-        countDisplay.className = 'thread-count';
-        countDisplay.textContent = '1 reply';
-        parentMessage.querySelector('.message-content').appendChild(countDisplay);
-    }
 });
 
 socket.on('reaction_added', (data) => {
