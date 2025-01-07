@@ -134,19 +134,28 @@ function createThreadMessageHTML(thread) {
         reactionGroups[reaction.emoji].usernames.push(reaction.user);
     });
 
-    return `
-        <div class="thread-message" data-message-id="${thread.id}">
+    // Calculate indentation based on depth
+    const indentationPadding = thread.depth * 20;
+
+    const html = `
+        <div class="thread-message" data-message-id="${thread.id}" data-replied-to-id="${thread.replied_to_id || ''}" style="margin-left: ${indentationPadding}px">
             <div class="message-header">
                 <span class="username">${thread.user}</span>
                 <span class="timestamp">${new Date(thread.timestamp).toLocaleString()}</span>
             </div>
+            ${thread.replied_to_id ? `
+                <div class="reply-indicator">
+                    Replying to ${thread.replied_to_username || 'message'}: 
+                    <span class="replied-content">${thread.replied_to_content || ''}</span>
+                </div>
+            ` : ''}
             <div class="message-content">${thread.content}</div>
             <div class="message-hover-actions">
                 <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
                     <i class="feather-smile"></i>
                     React
                 </button>
-                <button class="hover-action-btn reply-btn" title="Reply in thread">
+                <button class="hover-action-btn reply-btn" title="Reply in thread" onclick="setReplyContext('${thread.message_id}', '${thread.user}', '${thread.content}', '${thread.id}')">
                     <i class="feather-message-square"></i>
                     Reply
                 </button>
@@ -162,15 +171,54 @@ function createThreadMessageHTML(thread) {
                     </span>
                 `).join('')}
             </div>
+            <div class="thread-replies">
+                ${thread.replies ? thread.replies.map(reply => createThreadMessageHTML(reply)).join('') : ''}
+            </div>
         </div>
     `;
+
+    return html;
 }
 
+window.setReplyContext = function(messageId, username, content, immediateMessageId = null) {
+    const replyContext = document.querySelector('.reply-context');
+    const messageInput = document.getElementById('message-input');
+    
+    window.replyingTo = { 
+        parentMessageId: messageId,
+        messageId: immediateMessageId || messageId,
+        username: username, 
+        content: content,
+        isThreadReply: true
+    };
+
+    if (replyContext) {
+        replyContext.style.display = 'flex';
+        replyContext.innerHTML = `
+            <div class="reply-info">
+                <span class="reply-label">Replying to ${username}</span>
+                <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+                ${immediateMessageId ? '<span class="nested-reply-indicator">Nested Reply</span>' : ''}
+            </div>
+            <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
+        `;
+        messageInput.focus();
+    }
+};
+
+window.cancelReply = function() {
+    const replyContext = document.querySelector('.reply-context');
+    window.replyingTo = null;
+    if (replyContext) {
+        replyContext.style.display = 'none';
+    }
+};
+
 socket.on('thread_message', (data) => {
-    // Find the parent message using the parent_id from the data
-    const parentMessage = document.querySelector(`.message[data-message-id="${data.parent_id}"]`);
+    // Find the parent message or thread container
+    const parentMessage = document.querySelector(`.message[data-message-id="${data.message_id}"]`);
     if (!parentMessage) {
-        console.error('Parent message not found:', data.parent_id);
+        console.error('Parent message not found:', data.message_id);
         return;
     }
 
@@ -179,61 +227,57 @@ socket.on('thread_message', (data) => {
     if (!threadContainer) {
         threadContainer = document.createElement('div');
         threadContainer.className = 'thread-container';
-        threadContainer.dataset.parentId = data.parent_id;
+        threadContainer.dataset.parentId = data.message_id;
         parentMessage.appendChild(threadContainer);
     }
 
     // Ensure thread container is visible
     threadContainer.classList.add('active');
     threadContainer.style.display = 'block';
-    
-    // Always show the thread container when a new reply is added
-    threadContainer.classList.add('active');
-    threadContainer.style.display = 'block';
 
-    // Create thread message element
-    const threadMessage = document.createElement('div');
-    threadMessage.classList.add('thread-message');
-    threadMessage.dataset.messageId = data.id;
-    threadMessage.dataset.parentId = data.parent_id;
-    threadMessage.dataset.repliedToId = data.replied_to_id;
+    if (data.replied_to_id) {
+        // This is a nested reply
+        const parentThread = threadContainer.querySelector(`[data-message-id="${data.replied_to_id}"]`);
+        if (parentThread) {
+            let repliesContainer = parentThread.querySelector('.thread-replies');
+            if (!repliesContainer) {
+                repliesContainer = document.createElement('div');
+                repliesContainer.className = 'thread-replies';
+                parentThread.appendChild(repliesContainer);
+            }
+            repliesContainer.insertAdjacentHTML('beforeend', createThreadMessageHTML(data));
+        }
+    } else {
+        // This is a top-level thread reply
+        threadContainer.insertAdjacentHTML('beforeend', createThreadMessageHTML(data));
+    }
 
-    // Parse message content for channel references
-    data.content = parseChannelReferences(data.content);
-    
-    // Create thread message HTML with proper reactions and actions
-    threadMessage.innerHTML = createThreadMessageHTML({
-        ...data,
-        reactions: data.reactions || [],
-        threads: data.threads || []
-    });
-
-    // Add to thread container and ensure proper display
-    threadContainer.appendChild(threadMessage);
-    threadContainer.style.display = 'block';
-    threadContainer.scrollTop = threadContainer.scrollHeight;
-
-    // Update thread count and ensure it's visible
+    // Update thread count
     updateThreadCount(parentMessage);
 });
 
-function updateThreadCount(parentMessage) {
-    const threadContainer = parentMessage.querySelector('.thread-container');
-    const threadCount = threadContainer.querySelectorAll('.thread-message').length;
-    let countDisplay = parentMessage.querySelector('.thread-count');
-    
-    if (!countDisplay) {
-        countDisplay = document.createElement('div');
-        countDisplay.className = 'thread-count';
-        const messageContent = parentMessage.querySelector('.message-content');
-        if (messageContent) {
-            messageContent.appendChild(countDisplay);
-        }
+// Add handler for thread history
+socket.on('thread_history', (data) => {
+    const parentMessage = document.querySelector(`.message[data-message-id="${data.message_id}"]`);
+    if (!parentMessage) return;
+
+    let threadContainer = parentMessage.querySelector('.thread-container');
+    if (!threadContainer) {
+        threadContainer = document.createElement('div');
+        threadContainer.className = 'thread-container active';
+        threadContainer.dataset.parentId = data.message_id;
+        parentMessage.appendChild(threadContainer);
     }
-    
-    countDisplay.textContent = `${threadCount} ${threadCount === 1 ? 'reply' : 'replies'}`;
-    countDisplay.style.display = 'block';
-}
+
+    // Clear existing threads and add all threads from history
+    threadContainer.innerHTML = '';
+    data.threads.forEach(thread => {
+        threadContainer.insertAdjacentHTML('beforeend', createThreadMessageHTML(thread));
+    });
+
+    // Update thread count
+    updateThreadCount(parentMessage);
+});
 
 socket.on('reaction_added', (data) => {
     const selector = data.is_thread ? '.thread-message' : '.message';

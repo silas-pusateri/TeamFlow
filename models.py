@@ -100,7 +100,25 @@ class Thread(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    replied_to_id = db.Column(db.Integer, db.ForeignKey('thread.id'))  # ID of the thread being replied to
     user = db.relationship('User', backref=db.backref('thread_messages', lazy=True))
+    replies = db.relationship(
+        'Thread',
+        backref=db.backref('parent_thread', remote_side=[id]),
+        lazy=True,
+        cascade='all, delete-orphan',
+        order_by="Thread.timestamp"
+    )
+
+    @property
+    def thread_depth(self):
+        """Get the depth of this thread reply in the hierarchy"""
+        depth = 0
+        current = self
+        while current.replied_to_id is not None:
+            depth += 1
+            current = current.parent_thread
+        return depth
 
 class Reaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
