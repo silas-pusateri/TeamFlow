@@ -60,7 +60,14 @@ function createMessageHTML(data, reactionGroups) {
     return `
         <div class="message-header">
             <span class="username">${data.user}</span>
-            <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+            <div class="message-actions">
+                <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
+                <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
+                <div class="message-menu" id="menu-${data.id}">
+                    <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
+                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                </div>
+            </div>
         </div>
         <div class="message-content">${data.content}</div>
         <div class="message-hover-actions">

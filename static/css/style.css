@@ -830,3 +830,60 @@ body {
 .dark-theme .search-highlight {
     background-color: rgba(255, 220, 0, 0.2);
 }
+
+/* Message context menu styles */
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.message-menu-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.message-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    z-index: 1000;
+    min-width: 160px;
+}
+
+.message-menu.active {
+    display: block;
+}
+
+.menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .message-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}

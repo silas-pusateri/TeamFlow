@@ -562,7 +562,41 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    socket.on('search_results', (data) => {
+    // Message context menu functions
+function toggleMessageMenu(event, messageId) {
+    event.stopPropagation();
+    const menu = document.getElementById(`menu-${messageId}`);
+    
+    // Close all other menus
+    document.querySelectorAll('.message-menu.active').forEach(m => {
+        if (m !== menu) m.classList.remove('active');
+    });
+    
+    menu.classList.toggle('active');
+}
+
+function copyMessageContent(messageId) {
+    const message = document.querySelector(`[data-message-id="${messageId}"]`);
+    const content = message.querySelector('.message-content').textContent;
+    navigator.clipboard.writeText(content);
+}
+
+function copyMessageLink(messageId) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?message=${messageId}`;
+    navigator.clipboard.writeText(link);
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.message-menu') && !e.target.closest('.message-menu-btn')) {
+        document.querySelectorAll('.message-menu.active').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+
+socket.on('search_results', (data) => {
         if (searchResults) {
             if (data.results.length === 0) {
                 searchResults.innerHTML = `
