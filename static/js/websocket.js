@@ -307,15 +307,24 @@ socket.on('channel_info', (data) => {
 
 
 function parseChannelReferences(content) {
-    const channelRegex = /\#([a-zA-Z0-9_-]+)/g; // Matches #channelName
+    const channelRegex = /\#([a-zA-Z0-9_-]+)/g;
     return content.replace(channelRegex, (match, channelName) => {
-        //  Replace with a clickable link.  This assumes you have a function `selectChannel`
-        return `<a href="#" onclick="selectChannel('${channelName}')">#${channelName}</a>`;
+        return `<a href="#" class="channel-reference" onclick="window.handleChannelReference('${channelName}'); return false;">#${channelName}</a>`;
     });
 }
 
-// Placeholder for selectChannel function.  You'll need to implement this based on your app's logic.
-function selectChannel(channelName) {
-    console.log("Selecting channel:", channelName);
-    // Your channel selection logic here...  This might involve updating the UI, emitting a socket event, etc.
-}
+// Handle channel reference clicks
+window.handleChannelReference = function(channelName) {
+    const channelList = document.getElementById('channel-list');
+    const channels = channelList.getElementsByClassName('channel-item');
+    
+    for (let channel of channels) {
+        if (channel.textContent.trim().substring(2) === channelName) {
+            const channelId = channel.dataset.channelId;
+            if (typeof window.switchChannel === 'function') {
+                window.switchChannel(channelId);
+            }
+            break;
+        }
+    }
+};

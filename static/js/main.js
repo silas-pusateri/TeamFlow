@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function switchChannel(channelId) {
+    window.switchChannel = function(channelId) {
         if (currentChannel) {
             socket.emit('leave', { channel: currentChannel });
         }
