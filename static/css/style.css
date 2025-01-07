@@ -173,12 +173,22 @@ body {
 .message-hover-actions {
     display: none;
     gap: 0.5rem;
-    padding: 0.5rem 0;
-    margin-top: 0.5rem;
-    border-top: 1px solid var(--border-color);
+    padding: 0.5rem;
+    align-items: center;
 }
 
-.message:hover .message-hover-actions,
+/* Special styling for thread message hover actions */
+.thread-message .message-hover-actions {
+    display: none;
+    position: relative;
+    float: right;
+    margin-top: -2rem;  /* Align with message content */
+    background-color: var(--bg-color);
+    border-radius: 4px;
+    padding: 0.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .thread-message:hover .message-hover-actions {
     display: flex;
 }
@@ -205,6 +215,12 @@ body {
 .dark-theme .hover-action-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
+
+.message:hover .message-hover-actions,
+.thread-message:hover .message-hover-actions {
+    display: flex;
+}
+
 
 /* Thread styles */
 .thread-container {
