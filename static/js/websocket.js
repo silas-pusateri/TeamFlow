@@ -178,10 +178,14 @@ socket.on('thread_message', (data) => {
     let threadContainer = parentMessage.querySelector('.thread-container');
     if (!threadContainer) {
         threadContainer = document.createElement('div');
-        threadContainer.className = 'thread-container active';
+        threadContainer.className = 'thread-container';
         threadContainer.dataset.parentId = data.parent_id;
         parentMessage.appendChild(threadContainer);
     }
+
+    // Ensure thread container is visible
+    threadContainer.classList.add('active');
+    threadContainer.style.display = 'block';
     
     // Always show the thread container when a new reply is added
     threadContainer.classList.add('active');
@@ -196,10 +200,17 @@ socket.on('thread_message', (data) => {
 
     // Parse message content for channel references
     data.content = parseChannelReferences(data.content);
-    threadMessage.innerHTML = createThreadMessageHTML(data);
+    
+    // Create thread message HTML with proper reactions and actions
+    threadMessage.innerHTML = createThreadMessageHTML({
+        ...data,
+        reactions: data.reactions || [],
+        threads: data.threads || []
+    });
 
-    // Append the thread message to the container
+    // Add to thread container and ensure proper display
     threadContainer.appendChild(threadMessage);
+    threadContainer.style.display = 'block';
     threadContainer.scrollTop = threadContainer.scrollHeight;
 
     // Update thread count and ensure it's visible
