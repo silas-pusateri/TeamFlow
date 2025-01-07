@@ -455,27 +455,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add hover handlers for usernames with delay
+    // Add hover handlers for usernames with improved debouncing
     let userStatusTimeout;
+    let isHovering = false;
     
     document.addEventListener('mouseover', (e) => {
         const usernameElement = e.target.closest('.username');
         if (usernameElement) {
-            e.stopPropagation(); // Prevent event from bubbling to message
+            e.stopPropagation();
+            isHovering = true;
+            
             clearTimeout(userStatusTimeout);
             userStatusTimeout = setTimeout(() => {
-                const username = usernameElement.textContent;
-                socket.emit('get_user_status', { username });
-            }, 500); // Add delay before showing popup
+                if (isHovering) {
+                    const username = usernameElement.textContent;
+                    socket.emit('get_user_status', { username });
+                }
+            }, 200);
         }
     });
 
     document.addEventListener('mouseout', (e) => {
         const usernameElement = e.target.closest('.username');
+        const popup = document.querySelector('.user-status-popup');
+        
         if (usernameElement) {
+            isHovering = false;
             clearTimeout(userStatusTimeout);
-            // Add delay before hiding
-            setTimeout(hideUserStatusPopup, 300);
+            
+            // Check if mouse is over popup
+            if (popup) {
+                const isOverPopup = e.relatedTarget && popup.contains(e.relatedTarget);
+                if (!isOverPopup) {
+                    setTimeout(hideUserStatusPopup, 200);
+                }
+            }
+        }
+    });
+
+    // Add popup hover handlers
+    document.addEventListener('mouseover', (e) => {
+        const popup = e.target.closest('.user-status-popup');
+        if (popup) {
+            isHovering = true;
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const popup = e.target.closest('.user-status-popup');
+        if (popup && !popup.contains(e.relatedTarget)) {
+            isHovering = false;
+            setTimeout(hideUserStatusPopup, 200);
         }
     });
 
