@@ -292,3 +292,14 @@ window.currentUserId = null;
 socket.on('current_user', (data) => {
     window.currentUserId = data.user_id;
 });
+
+socket.on('channel_info', (data) => {
+    const header = document.getElementById('channel-header');
+    if (header) {
+        header.querySelector('.channel-name').textContent = `# ${data.name}`;
+        header.querySelector('.channel-description').textContent = data.description;
+        header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
+        header.querySelector('.message-count').textContent = `${data.message_count} messages`;
+        header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
+    }
+});

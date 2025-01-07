@@ -426,6 +426,31 @@ def handle_search(data):
             logging.error(f"Error in handle_search: {str(e)}")
             db.session.rollback()
 
+@socketio.on('get_channel_info')
+def handle_channel_info(data):
+    if current_user.is_authenticated:
+        try:
+            channel_id = data['channel_id']
+            channel = Channel.query.get(channel_id)
+            
+            if channel:
+                creator = User.query.get(channel.created_by_id)
+                message_count = Message.query.filter_by(channel_id=channel_id, parent_id=None).count()
+                reply_count = Message.query.filter_by(channel_id=channel_id).filter(Message.parent_id.isnot(None)).count()
+
+                emit('channel_info', {
+                    'name': channel.name,
+                    'description': channel.description,
+                    'creator': creator.username if creator else 'Unknown',
+                    'created_at': channel.created_at.isoformat(),
+                    'message_count': message_count,
+                    'reply_count': reply_count
+                })
+
+        except Exception as e:
+            logging.error(f"Error in handle_channel_info: {str(e)}")
+            db.session.rollback()
+
 @socketio.on('delete_message')
 def handle_delete_message(data):
     if current_user.is_authenticated:

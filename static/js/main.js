@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         currentChannel = channelId;
         socket.emit('join', { channel: channelId });
+        socket.emit('get_channel_info', { channel_id: channelId });
 
         // Reset reply state when switching channels
         cancelReply();

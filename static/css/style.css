@@ -84,6 +84,42 @@ body {
     flex-direction: column;
 }
 
+.channel-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+}
+
+.channel-info {
+    margin-bottom: 0.5rem;
+}
+
+.channel-name {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.channel-description {
+    margin: 0.5rem 0;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.channel-metrics {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.channel-metrics span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .message-container {
     flex: 1;
     overflow-y: auto;
