@@ -75,12 +75,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Create send button
-    const sendButton = document.createElement('button');
-    sendButton.className = 'send-button';
-    sendButton.innerHTML = '<i class="feather-send"></i>';
-    sendButton.addEventListener('click', sendMessage);
-    messageInput.parentElement.appendChild(sendButton);
+    // Add click handler to existing send button
+    const sendButton = document.querySelector('.send-button');
+    if (sendButton) {
+        sendButton.addEventListener('click', sendMessage);
+    }
 
     // Select first channel by default
     const firstChannel = channelList.querySelector('.channel-item');
