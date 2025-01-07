@@ -1,9 +1,26 @@
-let socket = io();
+let socket = io({
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+});
 let currentUserId = null;
 
 socket.on('connect', () => {
     console.log('Connected to WebSocket');
     socket.emit('get_current_user');
+});
+
+socket.on('disconnect', () => {
+    console.log('Disconnected from WebSocket');
+});
+
+socket.on('reconnect', (attemptNumber) => {
+    console.log('Reconnected to WebSocket after ' + attemptNumber + ' attempts');
+    if (currentChannel) {
+        socket.emit('join', { channel: currentChannel });
+    }
 });
 
 socket.on('message', (data) => {
