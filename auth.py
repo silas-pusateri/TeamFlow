@@ -55,6 +55,12 @@ def logout():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=request.form.get('email')).first()
+        if existing_user:
+            flash('Email address already registered')
+            return render_template('login.html', register=True)
+            
         user = User(
             username=request.form.get('username'),
             email=request.form.get('email')
@@ -62,5 +68,6 @@ def register():
         user.set_password(request.form.get('password'))
         db.session.add(user)
         db.session.commit()
+        flash('Registration successful! Please login.')
         return redirect(url_for('auth.login'))
     return render_template('login.html', register=True)
