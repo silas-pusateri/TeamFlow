@@ -64,7 +64,7 @@ function createMessageHTML(data, reactionGroups) {
         </div>
         <div class="message-content">${data.content}</div>
         <div class="message-hover-actions">
-            <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
+            <button class="hover-action-btn reaction-btn" title="Add reaction">
                 <i class="feather-smile"></i>
                 React
             </button>
@@ -73,11 +73,10 @@ function createMessageHTML(data, reactionGroups) {
                 Reply
             </button>
         </div>
-        <div class="reactions" data-message-id="${data.id}">
+        <div class="reactions">
             ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
                 <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
-                      data-emoji="${emoji}"
-                      data-message-id="${data.id}" 
+                      data-emoji="${emoji}" 
                       title="${usernames.join(', ')}">
                     ${emoji}
                     <span class="reaction-count">${count}</span>
@@ -91,21 +90,6 @@ function createMessageHTML(data, reactionGroups) {
 }
 
 function createThreadMessageHTML(thread) {
-    const threadReactions = thread.reactions || [];
-    const reactionGroups = {};
-    threadReactions.forEach(reaction => {
-        if (!reactionGroups[reaction.emoji]) {
-            reactionGroups[reaction.emoji] = {
-                count: 0,
-                users: new Set(),
-                usernames: []
-            };
-        }
-        reactionGroups[reaction.emoji].count++;
-        reactionGroups[reaction.emoji].users.add(reaction.user_id);
-        reactionGroups[reaction.emoji].usernames.push(reaction.user);
-    });
-
     return `
         <div class="thread-message" data-message-id="${thread.id}">
             <div class="message-header">
@@ -114,7 +98,7 @@ function createThreadMessageHTML(thread) {
             </div>
             <div class="message-content">${thread.content}</div>
             <div class="message-hover-actions">
-                <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${thread.id}">
+                <button class="hover-action-btn reaction-btn" title="Add reaction">
                     <i class="feather-smile"></i>
                     React
                 </button>
@@ -123,17 +107,7 @@ function createThreadMessageHTML(thread) {
                     Reply
                 </button>
             </div>
-            <div class="reactions" data-message-id="${thread.id}">
-                ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
-                    <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
-                          data-emoji="${emoji}"
-                          data-message-id="${thread.id}"
-                          title="${usernames.join(', ')}">
-                        ${emoji}
-                        <span class="reaction-count">${count}</span>
-                    </span>
-                `).join('')}
-            </div>
+            <div class="reactions"></div>
         </div>
     `;
 }
