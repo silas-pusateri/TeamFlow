@@ -55,12 +55,34 @@ document.addEventListener('DOMContentLoaded', function() {
     replyContext.style.display = 'none';
     messageInput.parentElement.insertBefore(replyContext, messageInput);
 
-    // Create cancel reply button
-    const cancelReplyButton = document.createElement('button');
-    cancelReplyButton.className = 'cancel-reply-btn';
-    cancelReplyButton.innerHTML = '×';
-    cancelReplyButton.addEventListener('click', cancelReply);
-    replyContext.appendChild(cancelReplyButton);
+    // Define cancelReply function in global scope first
+    window.cancelReply = function() {
+        const replyContext = document.querySelector('.reply-context');
+        window.replyingTo = null;
+        if (replyContext) {
+            replyContext.style.display = 'none';
+        }
+    };
+
+    window.setReplyContext = function(messageId, username, content) {
+        const replyContext = document.querySelector('.reply-context');
+        const messageInput = document.getElementById('message-input');
+
+        // Store reply information in window scope
+        window.replyingTo = { messageId, username, content };
+
+        if (replyContext) {
+            replyContext.style.display = 'flex';
+            replyContext.innerHTML = `
+                <div class="reply-info">
+                    <span class="reply-label">Replying to ${username}</span>
+                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
+                </div>
+                <button class="cancel-reply-btn" onclick="window.cancelReply()">×</button>
+            `;
+            messageInput.focus();
+        }
+    };
 
     // Channel creation
     const createChannelBtn = document.getElementById('createChannelBtn');
@@ -155,33 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    window.setReplyContext = function(messageId, username, content) {
-        const replyContext = document.querySelector('.reply-context');
-        const messageInput = document.getElementById('message-input');
-
-        // Store reply information in window scope
-        window.replyingTo = { messageId, username, content };
-
-        if (replyContext) {
-            replyContext.style.display = 'flex';
-            replyContext.innerHTML = `
-                <div class="reply-info">
-                    <span class="reply-label">Replying to ${username}</span>
-                    <span class="reply-preview">${content.substring(0, 50)}${content.length > 50 ? '...' : ''}</span>
-                </div>
-                <button class="cancel-reply-btn" onclick="cancelReply()">×</button>
-            `;
-            messageInput.focus();
-        }
-    };
-
-    window.cancelReply = function() {
-        const replyContext = document.querySelector('.reply-context');
-        window.replyingTo = null;
-        if (replyContext) {
-            replyContext.style.display = 'none';
-        }
-    };
 
     // Message actions (Pin, Bookmark, Reaction)
     messageContainer.addEventListener('click', (e) => {
