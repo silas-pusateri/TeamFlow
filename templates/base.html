@@ -16,6 +16,18 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <div class="nav-link search-container">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search messages...">
+                            <button id="searchBtn" class="btn btn-outline-light">
+                                <i class="feather-search"></i>
+                            </button>
+                        </div>
+                    </li>
+                    {% endif %}
+                </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
@@ -35,11 +47,6 @@
                     <li class="nav-item">
                         <button id="theme-toggle" class="btn btn-outline-light">Toggle Theme</button>
                     </li>
-                    <li class="nav-item position-absolute" style="right: 0; opacity: 0;">
-                        <form action="{{ url_for('auth.test_login') }}" method="POST" class="m-0">
-                            <button type="submit" class="btn btn-link nav-link">.</button>
-                        </form>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -54,6 +61,23 @@
     {% endwith %}
 
     {% block content %}{% endblock %}
+
+    <!-- Search Results Modal -->
+    <div class="modal fade" id="searchResultsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Search Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="searchResults" class="search-results">
+                        <!-- Search results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Status Customization Modal -->
     <div class="modal fade" id="statusModal" tabindex="-1">

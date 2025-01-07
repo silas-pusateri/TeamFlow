@@ -3,7 +3,7 @@ from flask_login import current_user
 from app import socketio, db
 from models import Message, Channel, Thread, Reaction, UserBookmark, User
 from datetime import datetime
-from sqlalchemy import and_
+from sqlalchemy import and_, or_ # Added or_ import
 import logging
 
 @socketio.on('connect')
@@ -328,4 +328,53 @@ def handle_update_custom_status(data):
                 }, broadcast=True)
         except Exception as e:
             logging.error(f"Error in handle_update_custom_status: {str(e)}")
+            db.session.rollback()
+
+@socketio.on('search_messages')
+def handle_search(data):
+    if current_user.is_authenticated:
+        try:
+            keyword = data.get('keyword', '').strip()
+            if not keyword:
+                return
+
+            # Search in message content
+            messages = Message.query.filter(
+                Message.content.ilike(f'%{keyword}%')
+            ).order_by(Message.timestamp.desc()).limit(50).all()
+
+            # Format results
+            results = []
+            for message in messages:
+                # Get channel name
+                channel = Channel.query.get(message.channel_id)
+                channel_name = channel.name if channel else 'Unknown Channel'
+
+                # Highlight the keyword in content
+                content = message.content
+                keyword_lower = keyword.lower()
+                start_idx = content.lower().find(keyword_lower)
+                if start_idx != -1:
+                    end_idx = start_idx + len(keyword)
+                    content = (
+                        content[:start_idx] +
+                        '<span class="search-highlight">' +
+                        content[start_idx:end_idx] +
+                        '</span>' +
+                        content[end_idx:]
+                    )
+
+                results.append({
+                    'id': message.id,
+                    'content': content,
+                    'user': message.user.username,
+                    'channel': channel_name,
+                    'timestamp': message.timestamp.isoformat(),
+                    'user_id': message.user_id
+                })
+
+            emit('search_results', {'results': results})
+
+        except Exception as e:
+            logging.error(f"Error in handle_search: {str(e)}")
             db.session.rollback()

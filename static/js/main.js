@@ -477,4 +477,56 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('current_user', (data) => {
         currentUserId = data.user_id;
     });
+
+    // Add these event handlers at the end of the DOMContentLoaded event listener
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchResultsModal = new bootstrap.Modal(document.getElementById('searchResultsModal'));
+    const searchResults = document.getElementById('searchResults');
+
+    function performSearch() {
+        const keyword = searchInput.value.trim();
+        if (keyword) {
+            socket.emit('search_messages', { keyword });
+        }
+    }
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performSearch);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    }
+
+    socket.on('search_results', (data) => {
+        if (searchResults) {
+            if (data.results.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="p-4 text-center">
+                        <p>No messages found matching your search.</p>
+                    </div>
+                `;
+            } else {
+                searchResults.innerHTML = data.results.map(result => `
+                    <div class="search-result-item">
+                        <div class="search-result-header">
+                            <span class="search-result-channel"># ${result.channel}</span>
+                            <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
+                        </div>
+                        <div class="search-result-content">${result.content}</div>
+                        <div class="search-result-user">
+                            <span class="username" data-user-id="${result.user_id}">${result.user}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            searchResultsModal.show();
+        }
+    });
 });
