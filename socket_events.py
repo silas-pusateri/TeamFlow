@@ -3,7 +3,7 @@ from flask_login import current_user
 from app import socketio, db
 from models import Message, Channel, Thread, Reaction, UserBookmark, User
 from datetime import datetime
-from sqlalchemy import and_, or_ # Added or_ import
+from sqlalchemy import and_, or_
 import logging
 
 @socketio.on('connect')
@@ -12,6 +12,13 @@ def handle_connect():
         try:
             current_user.is_online = True
             db.session.commit()
+
+            # Send channel list for search filter
+            channels = Channel.query.all()
+            emit('channel_list', {
+                'channels': [{'id': channel.id, 'name': channel.name} for channel in channels]
+            })
+
             emit('status_change', {
                 'user_id': current_user.id,
                 'status': 'online'
@@ -345,7 +352,7 @@ def handle_search(data):
             channel_filter = data.get('channel_id')
             date_from = data.get('date_from')
             date_to = data.get('date_to')
-            include_threads = data.get('include_threads', False)
+            include_threads = data.get('include_threads', True)  # Default to True
 
             # Build base query
             query = Message.query
@@ -363,16 +370,13 @@ def handle_search(data):
             if date_to:
                 query = query.filter(Message.timestamp <= date_to)
 
-            # Search in messages and optionally in threads
-            if include_threads:
-                query = query.filter(
-                    or_(
-                        Message.content.ilike(f'%{keyword}%'),
-                        Thread.content.ilike(f'%{keyword}%')
-                    )
-                ).join(Message.threads, isouter=True)
-            else:
-                query = query.filter(Message.content.ilike(f'%{keyword}%'))
+            # Search in messages and threads (now always included by default)
+            query = query.filter(
+                or_(
+                    Message.content.ilike(f'%{keyword}%'),
+                    Thread.content.ilike(f'%{keyword}%')
+                )
+            ).join(Message.threads, isouter=True)
 
             messages = query.order_by(Message.timestamp.desc()).limit(50).all()
 

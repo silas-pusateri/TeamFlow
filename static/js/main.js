@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
             searchChannelFilter.value = '';
             searchDateFrom.value = '';
             searchDateTo.value = '';
-            includeThreads.checked = false;
+            includeThreads.checked = true;  // Reset to true as it's the default
             performSearch();
         });
     }
