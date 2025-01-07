@@ -109,11 +109,15 @@ body {
 
 /* Message actions */
 .message-hover-actions {
-    display: flex;
+    display: none;
     gap: 0.5rem;
     padding: 0.5rem 0;
     border-top: 1px solid var(--border-color);
     margin-top: 0.75rem;
+}
+
+.message:hover .message-hover-actions {
+    display: flex;
 }
 
 .hover-action-btn {
