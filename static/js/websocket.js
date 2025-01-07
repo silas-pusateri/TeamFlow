@@ -155,7 +155,8 @@ socket.on('thread_message', (data) => {
 });
 
 socket.on('reaction_added', (data) => {
-    const message = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    const selector = data.is_thread ? '.thread-message' : '.message';
+    const message = document.querySelector(`${selector}[data-message-id="${data.message_id}"]`);
     if (message) {
         const reactionsContainer = message.querySelector('.reactions');
         const existingReaction = reactionsContainer.querySelector(`[data-emoji="${data.emoji}"]`);

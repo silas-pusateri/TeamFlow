@@ -175,13 +175,24 @@ def handle_reaction(data):
 
             db.session.commit()
 
-            # Broadcast the reaction update
-            emit('reaction_added', {
-                'message_id': message_id,
-                'emoji': emoji,
-                'user_id': current_user.id,
-                'user': current_user.username
-            }, room=message.channel_id)
+            # Get channel ID to broadcast to all clients
+            channel_id = None
+            if is_thread:
+                parent_message = Message.query.get(message.message_id)
+                if parent_message:
+                    channel_id = parent_message.channel_id
+            else:
+                channel_id = message.channel_id
+
+            if channel_id:
+                # Broadcast the reaction update
+                emit('reaction_added', {
+                    'message_id': message_id,
+                    'emoji': emoji,
+                    'user_id': current_user.id,
+                    'user': current_user.username,
+                    'is_thread': is_thread
+                }, broadcast=True, room=channel_id)
 
         except Exception as e:
             logging.error(f"Error in handle_reaction: {str(e)}")
