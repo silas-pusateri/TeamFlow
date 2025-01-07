@@ -25,6 +25,8 @@ socket.on('reconnect', (attemptNumber) => {
 
 socket.on('message', (data) => {
     const messageContainer = document.getElementById('message-container');
+    if (!messageContainer) return;
+    
     const placeholder = messageContainer.querySelector('.no-messages-placeholder');
     if (placeholder) {
         placeholder.remove();
@@ -374,10 +376,16 @@ socket.on('current_user', (data) => {
 
 socket.on('channel_info', (data) => {
     const header = document.getElementById('channel-header');
-    if (header) {
-        header.querySelector('.channel-name').textContent = `# ${data.name}`;
-        header.querySelector('.channel-description').textContent = data.description;
-        const ownerSpan = header.querySelector('.channel-owner');
+    if (!header) return;
+    
+    const channelName = header.querySelector('.channel-name');
+    const channelDesc = header.querySelector('.channel-description');
+    const ownerSpan = header.querySelector('.channel-owner');
+    const messageCount = header.querySelector('.message-count');
+    
+    if (channelName) channelName.textContent = `# ${data.name}`;
+    if (channelDesc) channelDesc.textContent = data.description;
+    if (ownerSpan) {
         ownerSpan.textContent = `Created by ${data.creator}`;
         ownerSpan.dataset.userId = data.creator_id;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
