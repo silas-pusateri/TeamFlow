@@ -177,106 +177,22 @@ body {
     align-items: center;
 }
 
-/* Thread styles */
-.thread-container {
-    margin: 0.5rem 0 0.5rem 2rem;
-    padding: 1rem;
-    border-left: 2px solid var(--border-color);
-    background-color: rgba(0, 0, 0, 0.02);
-    border-radius: 0 8px 8px 0;
-    display: none;
-    transition: all 0.3s ease;
-}
-
-.thread-container.expanded {
-    display: block;
-}
-
-/* Thread message styles */
-.thread-message {
-    position: relative;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
-    background-color: var(--bg-color);
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-}
-
-.thread-message:last-child {
-    margin-bottom: 0;
-}
-
-/* Thread toggle button */
-.thread-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.thread-toggle:hover {
-    color: var(--secondary-color);
-    text-decoration: underline;
-}
-
-.thread-toggle i {
-    transition: transform 0.2s ease;
-}
-
-.thread-toggle.expanded i {
-    transform: rotate(90deg);
-}
-
 /* Special styling for thread message hover actions */
 .thread-message .message-hover-actions {
     display: none;
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
+    float: right;
+    margin-top: -2rem;  /* Align with message content */
     background-color: var(--bg-color);
     border-radius: 4px;
     padding: 0.25rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    z-index: 1;
 }
 
 .thread-message:hover .message-hover-actions {
     display: flex;
 }
 
-/* Reply count badge */
-.reply-count {
-    font-size: 0.8rem;
-    color: var(--text-color);
-    opacity: 0.7;
-}
-
-/* Add indentation for nested replies */
-.thread-message .thread-container {
-    margin-left: 1.5rem;
-    border-left-color: var(--accent-color);
-    background-color: rgba(0, 0, 0, 0.01);
-}
-
-.thread-message .thread-message {
-    background-color: var(--bg-color);
-    border-color: var(--accent-color);
-}
-
-/* Message hover actions for both regular and thread messages */
-.message:hover .message-hover-actions {
-    display: flex;
-}
-
-/* Action buttons */
 .hover-action-btn {
     background: none;
     border: none;
@@ -298,6 +214,88 @@ body {
 
 .dark-theme .hover-action-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+.message:hover .message-hover-actions,
+.thread-message:hover .message-hover-actions {
+    display: flex;
+}
+
+
+/* Thread styles */
+.thread-container {
+    margin: 0.5rem 0 0.5rem 2rem;
+    padding: 1rem;
+    border-left: 2px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 0 8px 8px 0;
+    display: none;
+}
+
+.thread-container.active {
+    display: block;
+}
+
+/* Add nested thread styling */
+.thread-message {
+    position: relative;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background-color: var(--bg-color);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.thread-message:last-child {
+    margin-bottom: 0;
+}
+
+/* Add indentation for nested replies */
+.thread-message .thread-container {
+    margin-left: 1.5rem;
+    border-left-color: var(--accent-color);
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+.thread-message .thread-message {
+    background-color: var(--bg-color);
+    border-color: var(--accent-color);
+}
+
+/* Reactions */
+.reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0.5rem 0;
+}
+
+.reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.reaction:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.reaction.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.reaction-count {
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .dark-theme .thread-container {
@@ -774,6 +772,7 @@ body {
 }
 
 /* Search styles */
+
 .search-container {
     display: flex;
     gap: 8px;
