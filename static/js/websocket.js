@@ -63,6 +63,16 @@ function createMessageHTML(data, reactionGroups) {
             <span class="timestamp">${new Date(data.timestamp).toLocaleString()}</span>
         </div>
         <div class="message-content">${data.content}</div>
+        <div class="message-hover-actions">
+            <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
+                <i class="feather-smile"></i>
+                React
+            </button>
+            <button class="hover-action-btn reply-btn" title="Reply in thread">
+                <i class="feather-message-square"></i>
+                Reply
+            </button>
+        </div>
         <div class="reactions" data-message-id="${data.id}">
             ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
                 <span class="reaction ${users.has(currentUserId) ? 'active' : ''}" 
@@ -206,8 +216,22 @@ socket.on('reaction_added', (data) => {
     }
 });
 
-// Add event handler for clicking on reactions
+// Add event handlers for message actions
 document.addEventListener('click', (e) => {
+    const messageElement = e.target.closest('.message, .thread-message');
+    if (!messageElement) return;
+
+    if (e.target.closest('.reaction-btn')) {
+        const messageId = messageElement.dataset.messageId;
+        const rect = e.target.closest('.reaction-btn').getBoundingClientRect();
+        showEmojiPicker(messageId, rect);
+    } else if (e.target.closest('.reply-btn')) {
+        const username = messageElement.querySelector('.username').textContent;
+        const content = messageElement.querySelector('.message-content').textContent;
+        const messageId = messageElement.dataset.messageId;
+        setReplyContext(messageId, username, content);
+    }
+
     const reaction = e.target.closest('.reaction');
     if (reaction) {
         const messageElement = reaction.closest('.message, .thread-message');
