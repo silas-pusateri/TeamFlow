@@ -338,41 +338,53 @@ def handle_search(data):
             if not keyword:
                 return
 
-            # Search in message content
+            logging.info(f"Searching for keyword: {keyword}")
+
+            # Search in message content with case-insensitive matching
             messages = Message.query.filter(
                 Message.content.ilike(f'%{keyword}%')
             ).order_by(Message.timestamp.desc()).limit(50).all()
 
+            logging.info(f"Found {len(messages)} messages matching the search")
+
             # Format results
             results = []
             for message in messages:
-                # Get channel name
-                channel = Channel.query.get(message.channel_id)
-                channel_name = channel.name if channel else 'Unknown Channel'
+                try:
+                    # Get channel name
+                    channel = Channel.query.get(message.channel_id)
+                    channel_name = channel.name if channel else 'Unknown Channel'
 
-                # Highlight the keyword in content
-                content = message.content
-                keyword_lower = keyword.lower()
-                start_idx = content.lower().find(keyword_lower)
-                if start_idx != -1:
-                    end_idx = start_idx + len(keyword)
-                    content = (
-                        content[:start_idx] +
-                        '<span class="search-highlight">' +
-                        content[start_idx:end_idx] +
-                        '</span>' +
-                        content[end_idx:]
-                    )
+                    # Highlight the keyword in content
+                    content = message.content
+                    keyword_lower = keyword.lower()
+                    content_lower = content.lower()
 
-                results.append({
-                    'id': message.id,
-                    'content': content,
-                    'user': message.user.username,
-                    'channel': channel_name,
-                    'timestamp': message.timestamp.isoformat(),
-                    'user_id': message.user_id
-                })
+                    # Find all occurrences of the keyword
+                    start_idx = 0
+                    highlighted_content = ''
+                    while True:
+                        idx = content_lower.find(keyword_lower, start_idx)
+                        if idx == -1:
+                            highlighted_content += content[start_idx:]
+                            break
+                        highlighted_content += content[start_idx:idx]
+                        highlighted_content += f'<span class="search-highlight">{content[idx:idx+len(keyword)]}</span>'
+                        start_idx = idx + len(keyword)
 
+                    results.append({
+                        'id': message.id,
+                        'content': highlighted_content,
+                        'user': message.user.username,
+                        'channel': channel_name,
+                        'timestamp': message.timestamp.isoformat(),
+                        'user_id': message.user_id
+                    })
+                except Exception as e:
+                    logging.error(f"Error processing message {message.id}: {str(e)}")
+                    continue
+
+            logging.info("Sending search results to client")
             emit('search_results', {'results': results})
 
         except Exception as e:
