@@ -1,17 +1,33 @@
 // Define switchChannel in global scope
 window.switchChannel = function(channelId) {
-    socket.emit('leave', { channel: currentChannel });
-    socket.emit('join', { channel: channelId });
-    currentChannel = channelId;
+    const socket = io();
+    if (window.currentChannel) {
+        socket.emit('leave', { channel: window.currentChannel });
+    }
 
+    const messageContainer = document.getElementById('message-container');
+    messageContainer.innerHTML = `
+        <div class="no-messages-placeholder">
+            <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+        </div>
+    `;
+
+    window.currentChannel = channelId;
+    socket.emit('join', { channel: channelId });
+    socket.emit('get_channel_info', { channel_id: channelId });
+
+    // Reset reply state when switching channels
+    if (typeof window.cancelReply === 'function') {
+        window.cancelReply();
+    }
+
+    // Highlight selected channel
     document.querySelectorAll('.channel-item').forEach(item => {
         item.classList.remove('active');
+        if (item.dataset.channelId === channelId) {
+            item.classList.add('active');
+        }
     });
-
-    const channelItem = document.querySelector(`[data-channel-id="${channelId}"]`);
-    if (channelItem) {
-        channelItem.classList.add('active');
-    }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -131,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         parentMessage.appendChild(threadContainer);
                     }
                     threadContainer.classList.add('active');
-
+                    
                     // Ensure proper nesting of replies
                     if (replyingTo.isThreadReply) {
                         const repliedToMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
@@ -153,6 +169,34 @@ document.addEventListener('DOMContentLoaded', function() {
             messageInput.value = '';
             cancelReply();
         }
+    }
+
+    window.switchChannel = function(channelId) {
+        if (currentChannel) {
+            socket.emit('leave', { channel: currentChannel });
+        }
+
+        // Clear messages before joining new channel
+        messageContainer.innerHTML = `
+            <div class="no-messages-placeholder">
+                <p>No messages yet in this channel. Be the first to start a conversation! 💬</p>
+            </div>
+        `;
+
+        currentChannel = channelId;
+        socket.emit('join', { channel: channelId });
+        socket.emit('get_channel_info', { channel_id: channelId });
+
+        // Reset reply state when switching channels
+        cancelReply();
+
+        // Highlight selected channel
+        document.querySelectorAll('.channel-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.channelId === channelId) {
+                item.classList.add('active');
+            }
+        });
     }
 
     // Message actions (Pin, Bookmark, Reaction)
@@ -179,15 +223,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const replyContext = document.querySelector('.reply-context');
         const messageInput = document.getElementById('message-input');
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-
+        
         // Get parent message ID - either the current message or its thread container parent
         const threadContainer = messageElement.closest('.thread-container');
         const parentMessageId = threadContainer ? threadContainer.dataset.parentId : messageId;
-
-        window.replyingTo = {
+        
+        window.replyingTo = { 
             messageId: messageId,
             parentMessageId: parentMessageId,
-            username: username,
+            username: username, 
             content: content,
             isThreadReply: true
         };
@@ -539,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const channelFilter = document.getElementById('searchChannelFilter');
         if (channelFilter) {
             channelFilter.innerHTML = '<option value="">All Channels</option>' +
-                data.channels.map(channel =>
+                data.channels.map(channel => 
                     `<option value="${channel.id}">${channel.name}</option>`
                 ).join('');
         }
@@ -605,86 +649,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const baseUrl = window.location.origin + window.location.pathname;
-
-    // Message functions
-    function copyMessageLink(messageId) {
-        const link = `${baseUrl}?message=${messageId}`;
-        navigator.clipboard.writeText(link);
-    }
-
-    function showDeleteConfirmation(messageId) {
-        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
-        const checkbox = document.getElementById('deleteConfirmCheckbox');
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-
-        checkbox.checked = false;
-        deleteBtn.disabled = true;
-
-        checkbox.onchange = function() {
-            deleteBtn.disabled = !this.checked;
-        };
-
-        deleteBtn.onclick = function() {
-            socket.emit('delete_message', { message_id: messageId });
-            modal.hide();
-        };
-
-        modal.show();
-    }
-
-    // Message menu handling
-    function toggleMessageMenu(messageId) {
-        const menu = document.querySelector(`[data-menu-id="${messageId}"]`);
-        if (menu) {
-            menu.classList.toggle('show');
-        }
-    }
-
-    // Socket event handlers
-    socket.on('message_deleted', function(data) {
-        const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
-        if (messageElement) {
-            messageElement.remove();
-        }
-    });
-
-    // Close menus when clicking outside
-    document.addEventListener('click', (event) => {
-        if (!event.target.closest('.message-menu') && !event.target.closest('.message-menu-btn')) {
-            document.querySelectorAll('.message-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-    });
-
-    socket.on('search_results', (data) => {
-        if (searchResults) {
-            if (data.results.length === 0) {
-                searchResults.innerHTML = `
-                    <div class="p-4 text-center">
-                        <p>No messages found matching your search.</p>
-                    </div>
-                `;
-            } else {
-                searchResults.innerHTML = data.results.map(result => `
-                    <div class="search-result-item">
-                        <div class="search-result-header">
-                            <span class="search-result-channel"># ${result.channel}</span>
-                            <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div class="search-result-content">${result.content}</div>
-                        <div class="search-result-user">
-                            <span class="username" data-user-id="${result.user_id}">${result.user}</span>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            searchResultsModal.show();
-        }
-    });
-});
-
 // Message context menu functions - global scope
 window.toggleMessageMenu = function(event, messageId) {
     event.stopPropagation();
@@ -704,7 +668,75 @@ window.copyMessageContent = function(messageId) {
     navigator.clipboard.writeText(content);
 };
 
+window.copyMessageLink = function(messageId) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const link = `${baseUrl}?message=${messageId}`;
+    navigator.clipboard.writeText(link);
+};
 
-window.showDeleteConfirmation = showDeleteConfirmation;
-window.copyMessageLink = copyMessageLink;
-window.toggleMessageMenu = toggleMessageMenu;
+window.showDeleteConfirmation = function(messageId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    const checkbox = document.getElementById('deleteConfirmCheckbox');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+
+    // Reset checkbox and button state
+    checkbox.checked = false;
+    deleteBtn.disabled = true;
+
+    // Handle checkbox change
+    checkbox.onchange = function() {
+        deleteBtn.disabled = !this.checked;
+    };
+
+    // Handle delete confirmation
+    deleteBtn.onclick = function() {
+        socket.emit('delete_message', { message_id: messageId });
+        modal.hide();
+    };
+
+    modal.show();
+};
+
+// Handle message deletion response
+socket.on('message_deleted', function(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (messageElement) {
+        messageElement.remove();
+    }
+});
+
+// Close menus when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.message-menu') && !e.target.closest('.message-menu-btn')) {
+        document.querySelectorAll('.message-menu.active').forEach(menu => {
+            menu.classList.remove('active');
+        });
+    }
+});
+
+socket.on('search_results', (data) => {
+    if (searchResults) {
+        if (data.results.length === 0) {
+            searchResults.innerHTML = `
+                <div class="p-4 text-center">
+                    <p>No messages found matching your search.</p>
+                </div>
+            `;
+        } else {
+            searchResults.innerHTML = data.results.map(result => `
+                <div class="search-result-item">
+                    <div class="search-result-header">
+                        <span class="search-result-channel"># ${result.channel}</span>
+                        <span class="search-result-timestamp">${new Date(result.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div class="search-result-content">${result.content}</div>
+                    <div class="search-result-user">
+                        <span class="username" data-user-id="${result.user_id}">${result.user}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        searchResultsModal.show();
+    }
+});
+});
