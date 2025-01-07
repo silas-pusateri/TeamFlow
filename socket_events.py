@@ -216,20 +216,18 @@ def handle_thread_reply(data):
             db.session.add(message)
             db.session.commit()
 
-            # Create message data with thread info
-            message_data = {
-                'id': message.id,
-                'content': message.content,
-                'user': current_user.username,
-                'parent_id': parent_id,
-                'timestamp': message.timestamp.isoformat(),
-                'channel_id': parent_message.channel_id,
-                'thread_depth': message.thread_depth,  # Add thread depth for UI
-                'reactions': []  # Initialize empty reactions for new message
-            }
+            # Get channel info from the parent message
+            channel_id = parent_message.channel_id
 
-            # Broadcast to all clients in the channel
-            emit('thread_message', message_data, room=parent_message.channel_id)
+            # Create thread message data
+            message_data = create_message_data(message)
+            if message_data:
+                # Update parent message to include the new reply
+                parent_data = create_message_data(parent_message)
+                if parent_data:
+                    # Emit both the new reply and updated parent message
+                    emit('thread_message', message_data, room=channel_id)
+                    emit('message_updated', parent_data, room=channel_id)
 
         except Exception as e:
             logging.error(f"Error in handle_thread_reply: {str(e)}")

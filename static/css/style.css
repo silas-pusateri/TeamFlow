@@ -192,7 +192,7 @@ body {
     display: block;
 }
 
-/* Add nested thread styling */
+/* Thread message styles */
 .thread-message {
     position: relative;
     padding: 0.75rem;
@@ -237,13 +237,15 @@ body {
 /* Special styling for thread message hover actions */
 .thread-message .message-hover-actions {
     display: none;
-    position: relative;
-    float: right;
-    margin-top: -2rem;  /* Align with message content */
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
     background-color: var(--bg-color);
     border-radius: 4px;
     padding: 0.25rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 1;
 }
 
 .thread-message:hover .message-hover-actions {
@@ -269,39 +271,33 @@ body {
     border-color: var(--accent-color);
 }
 
-/* Reactions */
-.reactions {
+/* Message hover actions for both regular and thread messages */
+.message:hover .message-hover-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0.5rem 0;
 }
 
-.reaction {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 20px;
+/* Action buttons */
+.hover-action-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
-.reaction:hover {
-    background-color: rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
+.hover-action-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
 }
 
-.reaction.active {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.reaction-count {
-    font-size: 0.85rem;
-    font-weight: 500;
+.dark-theme .hover-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .dark-theme .thread-container {
