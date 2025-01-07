@@ -219,6 +219,7 @@ body {
     display: block;
 }
 
+/* Add nested thread styling */
 .thread-message {
     position: relative;
     padding: 0.75rem;
@@ -233,26 +234,16 @@ body {
     margin-bottom: 0;
 }
 
-.thread-message:hover {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+/* Add indentation for nested replies */
+.thread-message .thread-container {
+    margin-left: 1.5rem;
+    border-left-color: var(--accent-color);
+    background-color: rgba(0, 0, 0, 0.01);
 }
 
-.thread-message .message-hover-actions {
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    border: none;
-    margin: 0;
-    padding: 0.25rem;
+.thread-message .thread-message {
     background-color: var(--bg-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: opacity 0.2s ease;
-}
-
-.thread-message:hover .message-hover-actions {
-    opacity: 1;
+    border-color: var(--accent-color);
 }
 
 /* Reactions */

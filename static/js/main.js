@@ -129,18 +129,24 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             if (replyingTo) {
-                messageData.parent_id = replyingTo.messageId;
+                // Find the top-level parent message if replying within a thread
+                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
+                const topLevelMessage = parentMessage.closest('.message:not(.thread-message)');
+                messageData.parent_id = topLevelMessage ? topLevelMessage.dataset.messageId : replyingTo.messageId;
+
+                // Emit thread reply with the correct parent ID
                 socket.emit('thread_reply', messageData);
 
                 // Update thread container immediately
-                const parentMessage = document.querySelector(`[data-message-id="${replyingTo.messageId}"]`);
-                if (parentMessage) {
-                    let threadContainer = parentMessage.querySelector('.thread-container');
-                    if (!threadContainer) {
-                        threadContainer = document.createElement('div');
-                        threadContainer.className = 'thread-container';
-                        parentMessage.appendChild(threadContainer);
-                    }
+                const threadContainer = topLevelMessage.querySelector('.thread-container') || 
+                                      parentMessage.querySelector('.thread-container');
+
+                if (!threadContainer) {
+                    const newThreadContainer = document.createElement('div');
+                    newThreadContainer.className = 'thread-container';
+                    (topLevelMessage || parentMessage).appendChild(newThreadContainer);
+                    newThreadContainer.classList.add('active');
+                } else {
                     threadContainer.classList.add('active');
                 }
             } else {

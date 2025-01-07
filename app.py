@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
     pass
 
 db = SQLAlchemy(model_class=Base)
-socketio = SocketIO()
+socketio = SocketIO(cors_allowed_origins="*", async_mode='threading')
 login_manager = LoginManager()
 
 app = Flask(__name__)
@@ -27,7 +27,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB max file size
 
 db.init_app(app)
-socketio.init_app(app, cors_allowed_origins="*")
+socketio.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = "auth.login"
 

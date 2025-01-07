@@ -75,9 +75,24 @@ class Message(db.Model):
         'Message',
         backref=db.backref('parent', remote_side=[id]),
         lazy=True,
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
+        order_by="Message.timestamp"  # Ensure replies are ordered by timestamp
     )
-    bookmarks = db.relationship('UserBookmark', backref='message', lazy=True)
+
+    @property
+    def is_thread_reply(self):
+        """Check if this message is a reply in a thread"""
+        return self.parent_id is not None
+
+    @property
+    def thread_depth(self):
+        """Get the depth of this message in the thread hierarchy"""
+        depth = 0
+        current = self
+        while current.parent_id is not None:
+            depth += 1
+            current = current.parent
+        return depth
 
 class Thread(db.Model):
     id = db.Column(db.Integer, primary_key=True)
