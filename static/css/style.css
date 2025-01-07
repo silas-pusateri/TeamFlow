@@ -270,6 +270,10 @@ body {
     gap: 0.5rem;
     align-items: flex-end;
     background-color: var(--bg-color);
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
 #message-input {
