@@ -455,20 +455,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add hover handlers for usernames
+    // Add hover handlers for usernames with delay
+    let userStatusTimeout;
+    
     document.addEventListener('mouseover', (e) => {
         const usernameElement = e.target.closest('.username');
         if (usernameElement) {
-            const username = usernameElement.textContent;
-            // Emit socket event to get user status
-            socket.emit('get_user_status', { username });
+            e.stopPropagation(); // Prevent event from bubbling to message
+            clearTimeout(userStatusTimeout);
+            userStatusTimeout = setTimeout(() => {
+                const username = usernameElement.textContent;
+                socket.emit('get_user_status', { username });
+            }, 500); // Add delay before showing popup
         }
     });
 
     document.addEventListener('mouseout', (e) => {
         const usernameElement = e.target.closest('.username');
         if (usernameElement) {
-            hideUserStatusPopup();
+            clearTimeout(userStatusTimeout);
+            // Add delay before hiding
+            setTimeout(hideUserStatusPopup, 300);
         }
     });
 
