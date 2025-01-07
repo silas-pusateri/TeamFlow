@@ -79,6 +79,18 @@ def create_message_data(message):
             }
             threads.append(thread_data)
 
+        # Get replies (nested messages)
+        replies = []
+        if message.replies:
+            for reply in message.replies:
+                reply_data = {
+                    'id': reply.id,
+                    'content': reply.content,
+                    'user': reply.user.username if reply.user else 'Unknown',
+                    'timestamp': reply.timestamp.isoformat()
+                }
+                replies.append(reply_data)
+
         return {
             'id': message.id,
             'content': message.content,
@@ -88,7 +100,9 @@ def create_message_data(message):
             'pinned_by': message.pinned_by.username if message.pinned_by else None,
             'pinned_at': message.pinned_at.isoformat() if message.pinned_at else None,
             'reactions': reactions,
-            'threads': threads
+            'threads': threads,
+            'replies': replies,
+            'parent_id': message.parent_id
         }
     except Exception as e:
         logging.error(f"Error creating message data for message {message.id}: {str(e)}")
@@ -102,7 +116,8 @@ def handle_message(data):
             message = Message(
                 content=data['content'],
                 user_id=current_user.id,
-                channel_id=data['channel_id']
+                channel_id=data['channel_id'],
+                parent_id=data.get('parent_id')  # For threaded replies
             )
             db.session.add(message)
             db.session.commit()

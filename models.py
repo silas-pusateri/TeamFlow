@@ -41,23 +41,37 @@ class Message(db.Model):
     is_pinned = db.Column(db.Boolean, default=False)
     pinned_at = db.Column(db.DateTime)
     pinned_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    reactions = db.relationship('Reaction', backref='message', lazy=True)
-    threads = db.relationship('Thread', backref='parent_message', lazy=True)
+    reactions = db.relationship('Reaction', backref='message', lazy=True, cascade='all, delete-orphan')
+    threads = db.relationship(
+        'Thread',
+        backref='parent_message',
+        lazy=True,
+        cascade='all, delete-orphan',
+        primaryjoin="Message.id==Thread.message_id"
+    )
+    replies = db.relationship(
+        'Message',
+        backref=db.backref('parent', remote_side=[id]),
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
     bookmarks = db.relationship('UserBookmark', backref='message', lazy=True)
 
 class Thread(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'))
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id', ondelete='CASCADE'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', backref=db.backref('thread_messages', lazy=True))
 
 class Reaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     emoji = db.Column(db.String(32), nullable=False)
-    message_id = db.Column(db.Integer, db.ForeignKey('message.id'))
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id', ondelete='CASCADE'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref=db.backref('reactions', lazy=True))
 
 class UserBookmark(db.Model):
     id = db.Column(db.Integer, primary_key=True)
