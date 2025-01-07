@@ -3,7 +3,7 @@ from flask_login import current_user
 from app import socketio, db
 from models import Message, Channel, Thread, Reaction, UserBookmark, User
 from datetime import datetime
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 import logging
 
 @socketio.on('connect')
@@ -36,6 +36,10 @@ def handle_join(data):
             messages = Message.query.filter_by(channel_id=room)\
                 .order_by(Message.timestamp.asc())\
                 .all()
+
+            # Get reaction statistics for the channel
+            reaction_stats = get_reaction_stats(room)
+            emit('reaction_stats', {'stats': reaction_stats})
 
             # Send messages in batches to avoid overwhelming the socket
             batch_size = 100
@@ -113,28 +117,24 @@ def create_message_data(message):
         logging.error(f"Error creating message data for message {message.id}: {str(e)}")
         return None
 
-@socketio.on('message')
-def handle_message(data):
-    if current_user.is_authenticated:
-        try:
-            # Create and save new message to database
-            message = Message(
-                content=data['content'],
-                user_id=current_user.id,
-                channel_id=data['channel_id'],
-                parent_id=data.get('parent_id')  # For threaded replies
-            )
-            db.session.add(message)
-            db.session.commit()
+def get_reaction_stats(channel_id):
+    """Get statistics about emoji usage in a channel"""
+    try:
+        # Query to get reaction counts for the channel
+        stats = db.session.query(
+            Reaction.emoji,
+            func.count(Reaction.id).label('count')
+        ).join(Message, Message.id == Reaction.message_id)\
+         .filter(Message.channel_id == channel_id)\
+         .group_by(Reaction.emoji)\
+         .order_by(func.count(Reaction.id).desc())\
+         .limit(10)\
+         .all()
 
-            # Create message data for broadcast
-            message_data = create_message_data(message)
-            if message_data:
-                emit('message', message_data, room=data['channel_id'])
-
-        except Exception as e:
-            logging.error(f"Error in handle_message: {str(e)}")
-            db.session.rollback()
+        return [{'emoji': emoji, 'count': count} for emoji, count in stats]
+    except Exception as e:
+        logging.error(f"Error getting reaction stats: {str(e)}")
+        return []
 
 @socketio.on('reaction')
 def handle_reaction(data):
@@ -170,7 +170,10 @@ def handle_reaction(data):
 
             db.session.commit()
 
-            # Broadcast the reaction update
+            # Get updated reaction statistics
+            reaction_stats = get_reaction_stats(message.channel_id)
+
+            # Broadcast the reaction update and stats
             emit('reaction_added', {
                 'message_id': message_id,
                 'emoji': emoji,
@@ -178,9 +181,37 @@ def handle_reaction(data):
                 'user': current_user.username
             }, room=message.channel_id)
 
+            emit('reaction_stats', {
+                'stats': reaction_stats
+            }, room=message.channel_id)
+
         except Exception as e:
             logging.error(f"Error in handle_reaction: {str(e)}")
             db.session.rollback()
+
+@socketio.on('message')
+def handle_message(data):
+    if current_user.is_authenticated:
+        try:
+            # Create and save new message to database
+            message = Message(
+                content=data['content'],
+                user_id=current_user.id,
+                channel_id=data['channel_id'],
+                parent_id=data.get('parent_id')  # For threaded replies
+            )
+            db.session.add(message)
+            db.session.commit()
+
+            # Create message data for broadcast
+            message_data = create_message_data(message)
+            if message_data:
+                emit('message', message_data, room=data['channel_id'])
+
+        except Exception as e:
+            logging.error(f"Error in handle_message: {str(e)}")
+            db.session.rollback()
+
 
 @socketio.on('thread_reply')
 def handle_thread_reply(data):

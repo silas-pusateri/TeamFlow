@@ -6,6 +6,25 @@ socket.on('connect', () => {
     socket.emit('get_current_user');
 });
 
+socket.on('reaction_stats', (data) => {
+    const statsContainer = document.getElementById('reaction-stats');
+    if (!statsContainer) return;
+
+    // Clear existing stats
+    statsContainer.innerHTML = '';
+
+    // Create and append stat items
+    data.stats.forEach(stat => {
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `
+            <span class="stat-emoji">${stat.emoji}</span>
+            <span class="stat-count">${stat.count}</span>
+        `;
+        statsContainer.appendChild(statItem);
+    });
+});
+
 socket.on('message', (data) => {
     const messageContainer = document.getElementById('message-container');
     const placeholder = messageContainer.querySelector('.no-messages-placeholder');
