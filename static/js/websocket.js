@@ -66,8 +66,8 @@ function createMessageHTML(data, reactionGroups) {
                 <button class="message-menu-btn" onclick="toggleMessageMenu(event, '${data.id}')">⋮</button>
                 <div class="message-menu" id="menu-${data.id}">
                     <div class="menu-item" onclick="copyMessageContent('${data.id}')">Copy message</div>
-                    <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
-                    <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
+                <div class="menu-item" onclick="copyMessageLink('${data.id}')">Copy link</div>
+                <div class="menu-item delete-option" onclick="showDeleteConfirmation('${data.id}')">Delete message</div>
                 </div>
             </div>
         </div>
