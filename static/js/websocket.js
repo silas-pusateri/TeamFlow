@@ -70,7 +70,7 @@ function createMessageHTML(data, reactionGroups) {
                 </div>
             </div>
         </div>
-        <div class="message-content">${data.content}</div>
+        <div class="message-content">${parseChannelReferences(data.content)}</div>
         <div class="message-hover-actions">
             <button class="hover-action-btn reaction-btn" title="Add reaction" data-message-id="${data.id}">
                 <i class="feather-smile"></i>
@@ -301,5 +301,23 @@ socket.on('channel_info', (data) => {
         header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
+    }
+});
+function parseChannelReferences(content) {
+    // Replace #channelname with clickable links
+    return content.replace(/#(\w+)/g, '<a href="#" class="channel-reference" data-channel="$1">#$1</a>');
+}
+
+// Add channel reference click handler
+document.addEventListener('click', (e) => {
+    const channelRef = e.target.closest('.channel-reference');
+    if (channelRef) {
+        e.preventDefault();
+        const channelName = channelRef.dataset.channel;
+        const channelElement = document.querySelector(`.channel-item[data-channel-name="${channelName}"]`);
+        if (channelElement) {
+            const channelId = channelElement.dataset.channelId;
+            window.switchChannel(channelId);
+        }
     }
 });
