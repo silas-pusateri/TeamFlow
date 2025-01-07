@@ -1,4 +1,3 @@
-
 // Global emoji picker setup
 const emojiPicker = document.createElement('div');
 emojiPicker.className = 'emoji-picker';
@@ -795,6 +794,36 @@ socket.on('search_results', (data) => {
             `).join('');
         }
         searchResultsModal.show();
+    }
+});
+
+// Add file upload handling
+const fileUpload = document.getElementById('file-upload');
+fileUpload.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('text', messageInput.value);
+
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            showToast('File uploaded successfully');
+            messageInput.value = '';
+            fileUpload.value = '';
+        } else {
+            showToast(result.error || 'Failed to upload file');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showToast('Failed to upload file');
     }
 });
 });

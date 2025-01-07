@@ -974,3 +974,51 @@ body {
     background: rgba(255, 255, 255, 0.9);
     color: black;
 }
+
+.message-compose {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.input-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.file-upload-btn {
+    padding: 10px;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 44px;
+    height: 44px;
+}
+
+.file-upload-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.dark-theme .file-upload-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#message-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: none;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 44px;
+    max-height: 120px;
+}
