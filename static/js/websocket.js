@@ -371,10 +371,9 @@ socket.on('channel_info', (data) => {
     if (header) {
         header.querySelector('.channel-name').textContent = `# ${data.name}`;
         header.querySelector('.channel-description').textContent = data.description;
-        const ownerSpan = header.querySelector('.channel-owner');
-        ownerSpan.textContent = `Created by ${data.creator}`;
-        ownerSpan.dataset.userId = data.creator_id;
+        header.querySelector('.channel-owner').textContent = `Created by ${data.creator}`;
         header.querySelector('.message-count').textContent = `${data.message_count} messages`;
+        header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
 });
 
