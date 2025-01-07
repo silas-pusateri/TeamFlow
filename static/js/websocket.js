@@ -193,12 +193,16 @@ socket.on('reaction_added', (data) => {
 document.addEventListener('click', (e) => {
     const reaction = e.target.closest('.reaction');
     if (reaction) {
-        const messageId = reaction.closest('.message').dataset.messageId;
-        const emoji = reaction.dataset.emoji;
-        socket.emit('reaction', {
-            message_id: messageId,
-            emoji: emoji
-        });
+        const messageElement = reaction.closest('.message, .thread-message');
+        if (messageElement) {
+            const messageId = messageElement.dataset.messageId;
+            const emoji = reaction.dataset.emoji;
+            socket.emit('reaction', {
+                message_id: messageId,
+                emoji: emoji,
+                is_thread: messageElement.classList.contains('thread-message')
+            });
+        }
     }
 });
 

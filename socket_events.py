@@ -142,6 +142,7 @@ def handle_reaction(data):
         try:
             message_id = data['message_id']
             emoji = data['emoji']
+            is_thread = data.get('is_thread', False)
 
             # Check if user already reacted with this emoji
             existing_reaction = Reaction.query.filter(
@@ -152,7 +153,11 @@ def handle_reaction(data):
                 )
             ).first()
 
-            message = Message.query.get(message_id)
+            if is_thread:
+                message = Thread.query.get(message_id)
+            else:
+                message = Message.query.get(message_id)
+                
             if not message:
                 return
 
