@@ -122,10 +122,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Create reply context container
+    const replyContext = document.createElement('div');
+    replyContext.className = 'reply-context';
+    replyContext.style.display = 'none';
+    
     if (messageInput && messageInput.parentElement) {
-        const replyContext = document.createElement('div');
-        replyContext.className = 'reply-context';
-        replyContext.style.display = 'none';
         messageInput.parentElement.insertBefore(replyContext, messageInput);
     }
 
