@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Create reply context container
-    const messageInput = document.getElementById('message-input');
     if (messageInput && messageInput.parentElement) {
         const replyContext = document.createElement('div');
         replyContext.className = 'reply-context';
