@@ -1,16 +1,24 @@
-let socket = io({
-    reconnection: true,
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    timeout: 20000
-});
+let socket;
 let currentUserId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize socket after DOM is loaded
+    socket = io({
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        transports: ['websocket', 'polling']
+    });
+
     socket.on('connect', () => {
         console.log('Connected to WebSocket');
         socket.emit('get_current_user');
+    });
+
+    socket.on('connect_error', (error) => {
+        console.error('WebSocket connection error:', error);
     });
 });
 
