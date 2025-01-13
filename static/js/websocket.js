@@ -1,25 +1,15 @@
-let socket;
+let socket = io({
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+});
 let currentUserId = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize socket after DOM is loaded
-    socket = io({
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
-        transports: ['websocket', 'polling']
-    });
-
-    socket.on('connect', () => {
-        console.log('Connected to WebSocket');
-        socket.emit('get_current_user');
-    });
-
-    socket.on('connect_error', (error) => {
-        console.error('WebSocket connection error:', error);
-    });
+socket.on('connect', () => {
+    console.log('Connected to WebSocket');
+    socket.emit('get_current_user');
 });
 
 socket.on('disconnect', () => {
@@ -35,8 +25,6 @@ socket.on('reconnect', (attemptNumber) => {
 
 socket.on('message', (data) => {
     const messageContainer = document.getElementById('message-container');
-    if (!messageContainer) return;
-    
     const placeholder = messageContainer.querySelector('.no-messages-placeholder');
     if (placeholder) {
         placeholder.remove();
@@ -63,10 +51,6 @@ socket.on('message', (data) => {
         });
     }
 
-    // Add file attachment link if present
-    if (data.attachment_path) {
-        data.content += `\n<a href="/static/uploads/${data.attachment_name}" target="_blank" class="attachment-link">📎 ${data.attachment_name}</a>`;
-    }
     data.content = parseChannelReferences(data.content);
     messageElement.innerHTML = createMessageHTML(data, reactionGroups);
     messageContainer.appendChild(messageElement);
@@ -103,11 +87,6 @@ function createMessageHTML(data, reactionGroups) {
                 <i class="feather-message-square"></i>
                 Reply
             </button>
-            ${data.attachment_path ? `
-            <a href="/static/uploads/${data.attachment_name}" target="_blank" class="hover-action-btn" title="View file">
-                <i class="feather-file"></i>
-                View File
-            </a>` : ''}
         </div>
         <div class="reactions" data-message-id="${data.id}">
             ${Object.entries(reactionGroups).map(([emoji, {count, users, usernames}]) => `
@@ -391,19 +370,13 @@ socket.on('current_user', (data) => {
 
 socket.on('channel_info', (data) => {
     const header = document.getElementById('channel-header');
-    if (!header) return;
-    
-    const channelName = header.querySelector('.channel-name');
-    const channelDesc = header.querySelector('.channel-description');
-    const ownerSpan = header.querySelector('.channel-owner');
-    const messageCount = header.querySelector('.message-count');
-    
-    if (channelName) channelName.textContent = `# ${data.name}`;
-    if (channelDesc) channelDesc.textContent = data.description;
-    if (ownerSpan) {
+    if (header) {
+        header.querySelector('.channel-name').textContent = `# ${data.name}`;
+        header.querySelector('.channel-description').textContent = data.description;
+        const ownerSpan = header.querySelector('.channel-owner');
         ownerSpan.textContent = `Created by ${data.creator}`;
         ownerSpan.dataset.userId = data.creator_id;
-        if (messageCount) messageCount.textContent = `${data.message_count} messages`;
+        header.querySelector('.message-count').textContent = `${data.message_count} messages`;
         header.querySelector('.reply-count').textContent = `${data.reply_count} replies`;
     }
 });

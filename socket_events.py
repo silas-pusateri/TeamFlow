@@ -212,7 +212,7 @@ def handle_thread_reply(data):
             parent_id = data['parent_id']
             replied_to_id = data.get('replied_to_id')
             is_thread_reply = data.get('is_thread_reply', False)
-
+            
             # Always use top-level message as parent
             thread = Thread(
                 message_id=parent_id,
@@ -225,7 +225,7 @@ def handle_thread_reply(data):
 
             # Get parent message for channel info
             parent_message = Message.query.get(parent_id)
-
+            
             # Broadcast thread message
             thread_data = {
                 'id': thread.id,
@@ -441,16 +441,16 @@ def handle_channel_info(data):
         try:
             channel_id = data['channel_id']
             channel = Channel.query.get(channel_id)
-
+            
             if channel:
-                creator = User.query.get(channel.created_by_id) if channel.created_by_id != 0 else None
+                creator = User.query.get(channel.created_by_id)
                 message_count = Message.query.filter_by(channel_id=channel_id, parent_id=None).count()
                 reply_count = Message.query.filter_by(channel_id=channel_id).filter(Message.parent_id.isnot(None)).count()
 
                 emit('channel_info', {
                     'name': channel.name,
                     'description': channel.description,
-                    'creator': creator.username if creator else 'System' if channel.created_by_id == 0 else 'Unknown',
+                    'creator': creator.username if creator else 'Unknown',
                     'created_at': channel.created_at.isoformat(),
                     'message_count': message_count,
                     'reply_count': reply_count
