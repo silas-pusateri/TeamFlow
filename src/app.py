@@ -15,7 +15,9 @@ db = SQLAlchemy(model_class=Base)
 socketio = SocketIO(cors_allowed_origins="*", async_mode='threading')
 login_manager = LoginManager()
 
-app = Flask(__name__)
+app = Flask(__name__,
+           template_folder='templates',
+           static_folder='static')
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "dev_key_only"
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///teamflow.db")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
