@@ -1,10 +1,20 @@
 from flask_socketio import emit, join_room, leave_room
 from flask_login import current_user
-from app import socketio, db
+from app import socketio, db, app
 from models import Message, Channel, Thread, Reaction, UserBookmark, User
 from datetime import datetime
 from sqlalchemy import and_, or_
 import logging
+import os
+from flask import request
+from werkzeug.utils import secure_filename
+import base64
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @socketio.on('connect')
 def handle_connect():
@@ -124,24 +134,76 @@ def create_message_data(message):
 def handle_message(data):
     if current_user.is_authenticated:
         try:
+            # Check if there's a file attachment
+            file_data = None
+            if 'file' in data and data['file']:
+                try:
+                    file_info = data['file']
+                    if not allowed_file(file_info['name']):
+                        emit('error', {'message': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'})
+                        return
+                        
+                    filename = secure_filename(file_info['name'])
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    
+                    try:
+                        # Save the file from base64 data
+                        file_content = file_info['data'].split('base64,')[1]
+                        file_bytes = base64.b64decode(file_content)
+                        
+                        with open(filepath, 'wb') as f:
+                            f.write(file_bytes)
+                        
+                        file_data = {
+                            'filename': filename,
+                            'filepath': f'/uploads/{filename}',
+                            'filetype': filename.rsplit('.', 1)[1].lower()
+                        }
+                    except Exception as e:
+                        logging.error(f"File processing error: {str(e)}")
+                        emit('error', {'message': 'Failed to process file'})
+                        return
+                        
+                except Exception as e:
+                    logging.error(f"File upload error: {str(e)}")
+                    emit('error', {'message': 'File upload failed'})
+                    return
+
             # Create and save new message to database
             message = Message(
-                content=data['content'],
+                content=data.get('content', ''),
                 user_id=current_user.id,
                 channel_id=data['channel_id'],
-                parent_id=data.get('parent_id')  # For threaded replies
+                parent_id=data.get('parent_id'),
+                file_name=file_data['filename'] if file_data else None,
+                file_path=file_data['filepath'] if file_data else None,
+                file_type=file_data['filetype'] if file_data else None
             )
             db.session.add(message)
             db.session.commit()
 
             # Create message data for broadcast
-            message_data = create_message_data(message)
-            if message_data:
-                emit('message', message_data, room=data['channel_id'])
+            message_data = {
+                'id': message.id,
+                'content': message.content,
+                'user': current_user.username,
+                'timestamp': message.timestamp.isoformat(),
+                'channel_id': message.channel_id,
+                'parent_id': message.parent_id,
+                'file': {
+                    'name': message.file_name,
+                    'path': message.file_path,
+                    'type': message.file_type
+                } if message.file_name else None
+            }
+            
+            # Emit message to the specific channel room only
+            emit('message', message_data, to=data['channel_id'])
 
         except Exception as e:
             logging.error(f"Error in handle_message: {str(e)}")
             db.session.rollback()
+            emit('error', {'message': 'Failed to send message'})
 
 @socketio.on('reaction')
 def handle_reaction(data):
@@ -478,3 +540,27 @@ def handle_delete_message(data):
         except Exception as e:
             logging.error(f"Error in handle_delete_message: {str(e)}")
             db.session.rollback()
+
+@socketio.on('file_upload')
+def handle_file_upload(data):
+    if 'file' not in request.files:
+        return {'status': 'error', 'message': 'No file part'}
+    
+    file = request.files['file']
+    if file.filename == '':
+        return {'status': 'error', 'message': 'No selected file'}
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # Emit file upload success event to all clients
+        socketio.emit('file_uploaded', {
+            'status': 'success',
+            'filename': filename,
+            'message': f'File {filename} uploaded successfully'
+        })
+        return {'status': 'success', 'message': 'File uploaded successfully'}
+    
+    return {'status': 'error', 'message': 'File type not allowed'}
