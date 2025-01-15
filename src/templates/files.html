@@ -1,20 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="display-5 mb-2">Uploaded Files</h1>
-            <p class="text-muted lead">Files available for RAG system integration</p>
+<div class="container-fluid px-4 mt-5">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex flex-grow-1 align-items-center gap-3">
+                    <h1 class="h3 mb-0">Uploaded Files</h1>
+                    <p class="text-muted mb-0 flex-grow-1">Files available for RAG system integration</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload File
+                </button>
+            </div>
         </div>
-        <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                <i class="bi bi-cloud-upload me-2"></i>Upload File
-            </button>
-        </div>
-    </div>
-
-    <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">

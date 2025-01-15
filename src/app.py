@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, render_template, redirect, url_for, send_from_directory, request, flash
+from flask import Flask, render_template, redirect, url_for, send_from_directory, request, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, join_room, leave_room
 from flask_login import LoginManager, login_required, current_user
@@ -305,3 +305,22 @@ def on_leave(data):
     if channel:
         room = f'channel_{channel}'
         socketio.leave_room(room)
+
+@app.route('/rag')
+@login_required
+def rag_interface():
+    return render_template('rag_query.html')
+
+@app.route('/rag/query', methods=['POST'])
+@login_required
+def process_rag_query():
+    data = request.get_json()
+    query = data.get('query', '')
+    
+    # TODO: Implement actual RAG processing here
+    # For now, return a placeholder response
+    response = {
+        'response': f'This is a placeholder response for the query: "{query}"\nRAG implementation coming soon!'
+    }
+    
+    return jsonify(response)
