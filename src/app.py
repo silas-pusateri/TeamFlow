@@ -7,7 +7,7 @@ from flask_login import LoginManager, login_required, current_user
 from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.utils import secure_filename
-from rag_utils import rag_manager
+from src.rag_utils import rag_manager
 from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
