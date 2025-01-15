@@ -22725,15 +22725,10 @@ migrations/script.py.mako
 migrations/__pycache__/env.cpython-311.pyc
 migrations/versions/836a19890a32_add_embedding_status_to_message_model.py
 migrations/versions/__pycache__/836a19890a32_add_embedding_status_to_message_model.cpython-311.pyc
-src/app.py
-src/models.py
-src/rag_utils.py
 src/__pycache__/app.cpython-38.pyc
 src/__pycache__/rag_utils.cpython-38.pyc
 src/__pycache__/rag_utils.cpython-311.pyc
 src/repl_nix_teamflow.egg-info/top_level.txt
-src/templates/files.html
-src/templates/rag_query.html
 venv/bin/alembic
 venv/bin/dotenv
 venv/bin/mako-render
