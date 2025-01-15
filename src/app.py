@@ -4,10 +4,41 @@ from flask import Flask, render_template, redirect, url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO, join_room, leave_room
 from flask_login import LoginManager, login_required, current_user
+from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.utils import secure_filename
+from rag_utils import rag_manager
+from datetime import datetime
 
 logging.basicConfig(level=logging.DEBUG)
+
+def extract_text_from_file(file_path, file_type):
+    """Extract text content from uploaded file based on its type."""
+    try:
+        logging.info(f"Attempting to extract text from file: {file_path} (type: {file_type})")
+        
+        if file_type.startswith('text/') or any(file_path.endswith(ext) for ext in ['.txt', '.md', '.py', '.js', '.html', '.css']):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    logging.info(f"Successfully extracted {len(content)} characters from {file_path}")
+                    return content
+            except UnicodeDecodeError:
+                # Try with a different encoding if UTF-8 fails
+                with open(file_path, 'r', encoding='latin-1') as f:
+                    content = f.read()
+                    logging.info(f"Successfully extracted {len(content)} characters from {file_path} using latin-1 encoding")
+                    return content
+        elif file_type == 'application/pdf':
+            # Add PDF extraction if needed
+            logging.warning(f"PDF extraction not implemented for {file_path}")
+            return None
+        else:
+            logging.info(f"Unsupported file type {file_type} for {file_path}")
+            return None
+    except Exception as e:
+        logging.error(f"Error extracting text from file {file_path}: {str(e)}", exc_info=True)
+        return None
 
 class Base(DeclarativeBase):
     pass
@@ -15,6 +46,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 socketio = SocketIO(cors_allowed_origins="*", async_mode='threading')
 login_manager = LoginManager()
+migrate = Migrate()
 
 app = Flask(__name__,
            template_folder='templates',
@@ -35,6 +67,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 db.init_app(app)
+migrate.init_app(app, db)
 socketio.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = "auth.login"
@@ -144,9 +177,34 @@ def upload_file():
             try:
                 # Save the file
                 file.save(file_path)
+                logging.info(f"File saved successfully: {file_path}")
+                
+                # Extract text and add to RAG system if it's a text file
+                embedding_status = 'pending'
+                if file.content_type.startswith('text/') or any(file_name.endswith(ext) for ext in ['.txt', '.md', '.py', '.js', '.html', '.css']):
+                    logging.info(f"Processing text file for RAG: {file_name}")
+                    text_content = extract_text_from_file(file_path, file.content_type)
+                    if text_content:
+                        metadata = {
+                            "source": file_name,
+                            "channel": channel.name,
+                            "uploader": current_user.username,
+                            "content_type": file.content_type
+                        }
+                        logging.info(f"Attempting to add document to RAG system: {file_name}")
+                        success = rag_manager.add_documents([text_content], [metadata])
+                        embedding_status = 'success' if success else 'failed'
+                        logging.info(f"RAG processing result for {file_name}: {embedding_status}")
+                    else:
+                        embedding_status = 'failed'
+                        logging.error(f"Failed to extract text content from {file_name}")
+                else:
+                    logging.info(f"Skipping RAG processing for non-text file: {file_name}")
+                
             except Exception as e:
-                logging.error(f"Error saving file: {str(e)}")
+                logging.error(f"Error processing file {file_name}: {str(e)}", exc_info=True)
                 flash('Error saving file')
+                embedding_status = 'failed'
                 return redirect(url_for('files'))
             
             # Create a message to track the file
@@ -155,15 +213,17 @@ def upload_file():
             message = Message(
                 content=description,
                 user_id=current_user.id,
-                channel_id=int(channel_id),  # Ensure channel_id is an integer
+                channel_id=int(channel_id),
                 file_name=file_name,
                 file_path=file_path,
-                file_type=file.content_type
+                file_type=file.content_type,
+                embedding_status=embedding_status
             )
             
             try:
                 db.session.add(message)
                 db.session.commit()
+                logging.info(f"File record created successfully: {file_name} (status: {embedding_status})")
                 flash('File uploaded successfully')
             except Exception as e:
                 db.session.rollback()
@@ -235,6 +295,7 @@ def send_message():
         file_name = None
         file_path = None
         file_type = None
+        embedding_status = None
         
         if file and file.filename:
             # Secure the filename and ensure it's unique
@@ -253,8 +314,31 @@ def send_message():
             try:
                 # Save the file
                 file.save(file_path)
+                logging.info(f"File saved successfully in message: {file_path}")
+                
+                # Extract text and add to RAG system if it's a text file
+                embedding_status = 'pending'
+                if file_type.startswith('text/') or any(file_name.endswith(ext) for ext in ['.txt', '.md', '.py', '.js', '.html', '.css']):
+                    logging.info(f"Processing text file for RAG in message: {file_name}")
+                    text_content = extract_text_from_file(file_path, file_type)
+                    if text_content:
+                        metadata = {
+                            "source": file_name,
+                            "channel": channel.name,
+                            "uploader": current_user.username,
+                            "content_type": file_type
+                        }
+                        logging.info(f"Attempting to add document to RAG system from message: {file_name}")
+                        success = rag_manager.add_documents([text_content], [metadata])
+                        embedding_status = 'success' if success else 'failed'
+                        logging.info(f"RAG processing result for message file {file_name}: {embedding_status}")
+                    else:
+                        embedding_status = 'failed'
+                        logging.error(f"Failed to extract text content from message file {file_name}")
+                else:
+                    logging.info(f"Skipping RAG processing for non-text message file: {file_name}")
             except Exception as e:
-                logging.error(f"Error saving file: {str(e)}")
+                logging.error(f"Error processing message file {file_name}: {str(e)}", exc_info=True)
                 return 'Error saving file', 500
         
         # Create the message
@@ -264,11 +348,13 @@ def send_message():
             channel_id=channel_id,
             file_name=file_name,
             file_path=file_path,
-            file_type=file_type
+            file_type=file_type,
+            embedding_status=embedding_status
         )
         
         db.session.add(message)
         db.session.commit()
+        logging.info(f"Message created successfully{' with file: ' + file_name if file_name else ''}")
         
         # Emit the message through socket.io
         message_data = {
@@ -280,6 +366,7 @@ def send_message():
             'channel_id': message.channel_id,
             'file_name': message.file_name,
             'file_type': message.file_type,
+            'embedding_status': message.embedding_status,
             'reactions': []
         }
         
@@ -287,7 +374,7 @@ def send_message():
         return 'Message sent successfully', 200
         
     except Exception as e:
-        logging.error(f"Error sending message: {str(e)}")
+        logging.error(f"Error sending message: {str(e)}", exc_info=True)
         db.session.rollback()
         return str(e), 500
 
@@ -306,6 +393,8 @@ def on_leave(data):
         room = f'channel_{channel}'
         socketio.leave_room(room)
 
+from rag_utils import rag_manager
+
 @app.route('/rag')
 @login_required
 def rag_interface():
@@ -314,13 +403,127 @@ def rag_interface():
 @app.route('/rag/query', methods=['POST'])
 @login_required
 def process_rag_query():
-    data = request.get_json()
-    query = data.get('query', '')
-    
-    # TODO: Implement actual RAG processing here
-    # For now, return a placeholder response
-    response = {
-        'response': f'This is a placeholder response for the query: "{query}"\nRAG implementation coming soon!'
-    }
-    
-    return jsonify(response)
+    try:
+        data = request.get_json()
+        query = data.get('query')
+        query_type = data.get('type', 'question')  # 'question' or 'documentation'
+        
+        if not query:
+            return jsonify({
+                'error': 'No query provided',
+                'response': 'Please provide a query.'
+            }), 400
+            
+        # Process the query
+        result = rag_manager.query(query)
+        
+        # Format the response based on query type
+        if query_type == 'documentation':
+            response = f"Documentation:\n\n{result['answer']}\n\nSources:\n"
+            for source in result.get('sources', []):
+                response += f"\n- {source['file']}"
+        else:
+            response = f"{result['answer']}\n\nRelevant Sources:\n"
+            for source in result.get('sources', []):
+                response += f"\n- {source['file']}"
+        
+        return jsonify({
+            'response': response,
+            'raw_result': result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'response': 'An error occurred while processing your query.'
+        }), 500
+
+@app.route('/rag/ingest', methods=['POST'])
+@login_required
+def ingest_documents():
+    try:
+        if not request.files:
+            logging.warning("No files provided in request")
+            return jsonify({
+                'error': 'No files provided',
+                'message': 'Please provide files to ingest.'
+            }), 400
+            
+        files = request.files.getlist('files')
+        successful_files = []
+        failed_files = []
+        
+        for file in files:
+            try:
+                logging.info(f"Processing file: {file.filename}")
+                
+                # Get file extension
+                _, ext = os.path.splitext(file.filename)
+                ext = ext.lower()
+                
+                # Check if it's a supported text-based file
+                is_text_file = (
+                    file.content_type.startswith('text/') or
+                    ext in ['.txt', '.md', '.py', '.js', '.html', '.css']
+                )
+                
+                if not is_text_file:
+                    error_msg = f"Unsupported file type: {file.content_type}"
+                    logging.warning(f"{file.filename}: {error_msg}")
+                    failed_files.append(f"{file.filename} ({error_msg})")
+                    continue
+                
+                try:
+                    # Try to read and decode the file content
+                    content = file.read().decode('utf-8')
+                    logging.info(f"Successfully read {file.filename} with UTF-8 encoding")
+                except UnicodeDecodeError:
+                    # If UTF-8 fails, try with a different encoding
+                    file.seek(0)  # Reset file pointer
+                    content = file.read().decode('latin-1')
+                    logging.info(f"Successfully read {file.filename} with latin-1 encoding")
+                
+                # Log content length for debugging
+                logging.info(f"Content length for {file.filename}: {len(content)} characters")
+                
+                metadata = {
+                    'source': file.filename,
+                    'type': 'text/markdown' if ext == '.md' else file.content_type,
+                    'uploader': current_user.username,
+                    'upload_time': datetime.utcnow().isoformat()
+                }
+                
+                logging.info(f"Attempting to add {file.filename} to vector store")
+                # Add to vector store
+                success = rag_manager.add_documents(
+                    texts=[content],
+                    metadatas=[metadata]
+                )
+                
+                if success:
+                    logging.info(f"Successfully processed {file.filename}")
+                    successful_files.append(file.filename)
+                else:
+                    error_msg = "Failed to add to vector store"
+                    logging.error(f"{file.filename}: {error_msg}")
+                    failed_files.append(f"{file.filename} ({error_msg})")
+                    
+            except Exception as e:
+                logging.error(f"Error processing {file.filename}: {str(e)}", exc_info=True)
+                failed_files.append(f"{file.filename} ({str(e)})")
+        
+        result = {
+            'message': 'Document ingestion complete',
+            'successful_files': successful_files,
+            'failed_files': failed_files
+        }
+        logging.info(f"Ingestion result: {result}")
+        return jsonify(result)
+        
+    except Exception as e:
+        error_msg = f"An error occurred during document ingestion: {str(e)}"
+        logging.error(error_msg, exc_info=True)
+        return jsonify({
+            'error': str(e),
+            'message': error_msg
+        }), 500

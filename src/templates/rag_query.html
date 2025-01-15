@@ -4,6 +4,27 @@
 <div class="container-fluid px-4">
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+            <!-- Document Ingestion Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Document Ingestion</h4>
+                </div>
+                <div class="card-body">
+                    <form id="ingestForm" class="mb-4">
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label">Upload Documents:</label>
+                            <input type="file" class="form-control" id="fileInput" multiple accept=".txt,.md,.py,.js,.html,.css">
+                            <div class="form-text">Supported file types: .txt, .md, .py, .js, .html, .css</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-success" onclick="ingestDocuments()">Upload & Process</button>
+                        </div>
+                    </form>
+                    <div id="ingestStatus" class="alert" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Query Card -->
             <div class="card mt-4">
                 <div class="card-header">
                     <h4 class="mb-0">Query Assistant</h4>
@@ -49,6 +70,59 @@
 </div>
 
 <script>
+async function ingestDocuments() {
+    const fileInput = document.getElementById('fileInput');
+    const ingestStatus = document.getElementById('ingestStatus');
+    const files = fileInput.files;
+    
+    if (files.length === 0) {
+        ingestStatus.className = 'alert alert-warning';
+        ingestStatus.textContent = 'Please select files to upload.';
+        ingestStatus.style.display = 'block';
+        return;
+    }
+    
+    // Show loading state
+    ingestStatus.className = 'alert alert-info';
+    ingestStatus.textContent = 'Uploading and processing documents...';
+    ingestStatus.style.display = 'block';
+    
+    try {
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('files', file);
+        }
+        
+        const response = await fetch('/rag/ingest', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            ingestStatus.className = 'alert alert-success';
+            let message = 'Documents processed successfully.';
+            if (result.successful_files.length > 0) {
+                message += `\nSuccessful: ${result.successful_files.join(', ')}`;
+            }
+            if (result.failed_files.length > 0) {
+                message += `\nFailed: ${result.failed_files.join(', ')}`;
+            }
+            ingestStatus.textContent = message;
+        } else {
+            throw new Error(result.message || 'Failed to process documents');
+        }
+        
+    } catch (error) {
+        ingestStatus.className = 'alert alert-danger';
+        ingestStatus.textContent = `Error: ${error.message}`;
+    }
+    
+    // Clear file input
+    fileInput.value = '';
+}
+
 async function submitQuery(type) {
     const queryInput = document.getElementById('queryInput');
     const responseArea = document.getElementById('responseArea');

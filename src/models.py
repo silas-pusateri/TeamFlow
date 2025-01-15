@@ -68,6 +68,7 @@ class Message(db.Model):
     file_name = db.Column(db.String(255), nullable=True)
     file_path = db.Column(db.String(255), nullable=True)
     file_type = db.Column(db.String(50), nullable=True)
+    embedding_status = db.Column(db.String(20), default='pending')  # Values: pending, success, failed
     is_pinned = db.Column(db.Boolean, default=False)
     pinned_at = db.Column(db.DateTime)
     pinned_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
